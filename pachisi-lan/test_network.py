@@ -75,6 +75,21 @@ class Network(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(r.status,200);self.assertEqual(await r.read(),(s.ROOT/'winner.wav').read_bytes())
         async with self.client.get(self.server.make_url('/winner.wav'),headers={'Range':'bytes=0-11'}) as r:
             self.assertEqual(r.status,206);data=await r.read();self.assertEqual(data[:4],b'RIFF');self.assertEqual(data[8:12],b'WAVE')
+    async def test_finished_game_can_reset_after_refresh_with_other_human_present(self):
+        human=await self.join('Still connected')
+        await human.send_json({'action':'start','with_bots':True});await self.state(human)
+        s.game.update(winner=1,message='Computer 2 wins!');s.record_win(1)
+        refreshed=await self.client.ws_connect(self.server.make_url('/ws'));result=await self.state(refreshed)
+        self.assertEqual(result['game']['winner'],1);self.assertTrue(result['can_reset'])
+        await refreshed.send_json({'action':'reset'});lobby=await self.state(refreshed);await self.state(human)
+        self.assertFalse(lobby['game']['started']);self.assertIsNone(lobby['game']['winner'])
+        self.assertTrue(all(seat is None for seat in lobby['seats'][1:]))
+        self.assertEqual(s.hall_rows()[0]['wins'],1)
+        await refreshed.send_json({'action':'join','name':'Refreshed player'})
+        self.assertEqual((await refreshed.receive_json())['type'],'joined');await self.state(refreshed);await self.state(human)
+        await refreshed.send_json({'action':'start','with_bots':True});new_game=await self.state(refreshed);await self.state(human)
+        self.assertTrue(new_game['game']['started']);self.assertIsNone(new_game['game']['winner'])
+        await refreshed.close();await self.state(human);await human.close()
     async def test_lobby_music(self):
         async with self.client.get(self.server.make_url('/music2.mp3')) as r:
             self.assertEqual(r.status,200);self.assertEqual(await r.read(),(s.ROOT/'music2.mp3').read_bytes())

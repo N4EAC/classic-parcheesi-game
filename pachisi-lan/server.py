@@ -71,7 +71,7 @@ def reset_if_abandoned():
     return False
 
 def public():
-    return dict(type='state',game=game,can_reset=human_present() is False,options=choices(game['turn']) if game['started'] and game['winner'] is None else [],seats=[dict(name=s['name'],bot=s['bot']) if s else None for s in seats],event=event)
+    return dict(type='state',game=game,can_reset=game['winner'] is not None or not human_present(),options=choices(game['turn']) if game['started'] and game['winner'] is None else [],seats=[dict(name=s['name'],bot=s['bot']) if s else None for s in seats],event=event)
 async def broadcast():
     msg=json.dumps(public())
     for ws in list(clients):
@@ -278,7 +278,7 @@ async def websocket(request):
                     opts=choices(seat)
                     selected=next((o for o in opts if o['piece']==data.get('piece') and o['steps']==data.get('steps') and o['enter']==data.get('enter',False)),None)
                     if selected:move(seat,selected)
-                elif action=='reset' and (seat is not None or not human_present()):
+                elif action=='reset' and (seat is not None or game['winner'] is not None or not human_present()):
                     reset_game()
                 await broadcast()
     finally:

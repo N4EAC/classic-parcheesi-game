@@ -100,7 +100,16 @@ document.addEventListener('keydown',audioGesture,{capture:true});
 document.addEventListener('visibilitychange',syncLobbyMusic);
 const activeSounds=new Set();
 function send(action,extra={}){if(ws?.readyState===1)ws.send(JSON.stringify({action,...extra}))}
-function connect(){ws=new WebSocket((location.protocol==='https:'?'wss':'ws')+'://'+location.host+'/ws');ws.onopen=()=>{syncLobbyMusic()};ws.onclose=()=>{seat=null;jumps.clear();if(state)render();syncLobbyMusic();$('status').textContent='Disconnected — reconnecting…';setTimeout(connect,1400)};ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='joined'){seat=m.seat;render();return}if(m.type==='state'){if(m.event?.id!==lastEvent&&lastEvent!==null)effect(m.event);lastEvent=m.event?.id;queueMoves(state,m);syncDice(state,m);state=m;render()}}}
+function receiveState(next,initial=false){
+ const previous=initial?null:state;
+ if(initial){
+  // A snapshot describes an existing result; only a live win gets a celebration.
+  celebratedWinner=next.game.winner;jumps.clear();stopWinnerAudio();
+  if($('victory').open)$('victory').close();
+ }else if(next.event?.id!==lastEvent&&lastEvent!==null)effect(next.event);
+ lastEvent=next.event?.id;queueMoves(previous,next);syncDice(previous,next);state=next;render();
+}
+function connect(){let receivedState=false;ws=new WebSocket((location.protocol==='https:'?'wss':'ws')+'://'+location.host+'/ws');ws.onopen=()=>{syncLobbyMusic()};ws.onclose=()=>{seat=null;jumps.clear();if(state)render();syncLobbyMusic();$('status').textContent='Disconnected — reconnecting…';setTimeout(connect,1400)};ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='joined'){seat=m.seat;render();return}if(m.type==='state'){receiveState(m,!receivedState);receivedState=true}}}
 window.addEventListener('pagehide',()=>{lobbyMusic.pause();ws?.close()});
 $('joinBtn').onclick=()=>send('join',{name:$('nickname').value});$('start').onclick=()=>send('start',{with_bots:true});$('startHuman').onclick=()=>send('start',{with_bots:false});$('roll').onclick=()=>send('roll');$('reset').onclick=()=>{if(confirm('Reset the game and stop all computer opponents?'))send('reset')};$('sound').setAttribute('aria-pressed','true');
 $('sound').onclick=()=>{
@@ -339,6 +348,7 @@ if(state){
 function drawDie(cx,cy,n,angle=0,scale=1){ctx.save();ctx.translate(cx,cy);ctx.scale(.65*scale,.65*scale);ctx.rotate(angle);ctx.shadowColor='#0007';ctx.shadowBlur=9;ctx.fillStyle='#fffdf6';ctx.strokeStyle='#46372c';ctx.lineWidth=3;ctx.beginPath();ctx.roundRect(-32,-32,64,64,9);ctx.fill();ctx.stroke();ctx.shadowBlur=0;if(n){const dots={1:[[0,0]],2:[[-16,-16],[16,16]],3:[[-16,-16],[0,0],[16,16]],4:[[-16,-16],[16,-16],[-16,16],[16,16]],5:[[-16,-16],[16,-16],[0,0],[-16,16],[16,16]],6:[[-16,-18],[16,-18],[-16,0],[16,0],[-16,18],[16,18]]};ctx.fillStyle='#25221e';for(const [x,y] of dots[n]){ctx.beginPath();ctx.arc(x,y,5.5,0,Math.PI*2);ctx.fill()}}else{ctx.fillStyle='#39342c';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText('CLICK',0,-3);ctx.fillText('TO ROLL',0,12)}ctx.restore()}
 canvas.onclick=e=>{const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)*750/r.width,y=(e.clientY-r.top)*750/r.height;const pose=dicePose(performance.now());if(Math.abs(x-pose.x)<55&&Math.abs(y-pose.y)<26&&canRoll())send('roll')};
 function canRoll(){const g=state?.game;return seat!==null&&g?.started&&!g.rolled&&g.turn===seat&&g.winner===null&&!diceTimeline.length}
+function canReset(){const g=state?.game;return Boolean(g&&(g.started||g.winner!=null)&&(seat!==null||state.can_reset||g.winner!=null))}
 function options(){return state&&seat===state.game.turn?state.options||[]:[]}
 function escape(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 let celebratedWinner=null;
@@ -398,7 +408,7 @@ function renderMobileControls(moves){
  $('mobileMoveBtn').disabled=moves.length===0;
 }
 $('mobileMoveBtn').onclick=()=>{const choice=options().find(o=>moveKey(o)===$('mobileMove').value);if(choice)send('move',choice)};
-function render(){if(!state)return;const g=state.game;$('join').style.display=seat!==null||g.started?'none':'block';$('seats').innerHTML=state.seats.map((s,i)=>`<div class="seat ${g.started&&g.turn===i?'active':''}" style="border-color:${colors[i]}"><b>${names[i]}</b> — ${s?escape(s.name)+(s.bot?' 🤖':''):'Open seat'}${i===seat?' (You)':''}</div>`).join('');$('status').textContent=g.message;$('dice').textContent=g.dice?`${g.dice[0]} + ${g.dice[1]}  •  Remaining: ${g.remaining.join(', ')||'none'}`:'—';$('start').disabled=seat===null||g.started;$('startHuman').disabled=seat===null||g.started||state.seats.filter(Boolean).length<2;$('roll').disabled=!canRoll();$('reset').disabled=(seat===null&&!state.can_reset)||!g.started;const moves=options();renderMobileControls(moves);$('moves').innerHTML=moves.length?'<h3>Choose a move</h3>':'';moves.forEach(o=>{const b=document.createElement('button');b.textContent=`Piece ${o.piece+1}: ${o.enter?'ENTER (5)':`move ${o.steps} spaces`}`;b.onclick=()=>send('move',o);$('moves').appendChild(b)});draw();syncVictory();syncLobbyMusic()}
+function render(){if(!state)return;const g=state.game;$('join').style.display=seat!==null||g.started?'none':'block';$('seats').innerHTML=state.seats.map((s,i)=>`<div class="seat ${g.started&&g.turn===i?'active':''}" style="border-color:${colors[i]}"><b>${names[i]}</b> — ${s?escape(s.name)+(s.bot?' 🤖':''):'Open seat'}${i===seat?' (You)':''}</div>`).join('');$('status').textContent=g.message;$('dice').textContent=g.dice?`${g.dice[0]} + ${g.dice[1]}  •  Remaining: ${g.remaining.join(', ')||'none'}`:'—';$('start').disabled=seat===null||g.started;$('startHuman').disabled=seat===null||g.started||state.seats.filter(Boolean).length<2;$('roll').disabled=!canRoll();$('reset').disabled=!canReset();const moves=options();renderMobileControls(moves);$('moves').innerHTML=moves.length?'<h3>Choose a move</h3>':'';moves.forEach(o=>{const b=document.createElement('button');b.textContent=`Piece ${o.piece+1}: ${o.enter?'ENTER (5)':`move ${o.steps} spaces`}`;b.onclick=()=>send('move',o);$('moves').appendChild(b)});draw();syncVictory();syncLobbyMusic()}
 // Idle frames do not redraw the board; background tabs and reduced motion stay still.
 let wasWiggling=false;
 setInterval(()=>{
