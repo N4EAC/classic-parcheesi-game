@@ -1,0 +1,25 @@
+[Unit]
+Description=Classic Parcheesi Game LAN server
+After=network.target
+
+[Service]
+Type=simple
+User=pachisi
+Group=pachisi
+WorkingDirectory=/usr/share/classic-parcheesi-game
+ExecStart=/usr/bin/python3 /usr/share/classic-parcheesi-game/server.py
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+RuntimeDirectory=pachisi-lan
+RuntimeDirectoryPreserve=yes
+Environment=PARCHEESI_HALL_FILE=/run/pachisi-lan/victory-hall.json
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PYTHONUNBUFFERED=1
+ReadWritePaths=/run/pachisi-lan
+
+[Install]
+WantedBy=multi-user.target

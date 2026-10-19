@@ -11,6 +11,10 @@ if [[ $EUID -ne 0 ]]; then
   echo 'Run with sudo: sudo bash install-pachisi.sh' >&2
   exit 1
 fi
+if command -v dpkg-query >/dev/null 2>&1 && [[ "$(dpkg-query -W -f='${Status}' classic-parcheesi-game 2>/dev/null || true)" == 'install ok installed' ]]; then
+  echo 'Classic Parcheesi Game is managed by APT. Upgrade with sudo apt install ./classic-parcheesi-game_VERSION_all.deb instead.' >&2
+  exit 1
+fi
 if ! command -v apt-get >/dev/null || ! command -v systemctl >/dev/null; then
   echo 'This installer requires Ubuntu/Debian with apt and systemd.' >&2
   exit 1

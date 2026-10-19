@@ -1,0 +1,34 @@
+name: Ubuntu package
+on:
+  push:
+    paths: ['debian/**', 'packaging/**', 'pachisi-lan/**', '.github/workflows/debian-package.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build and test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y debhelper python3-aiohttp
+      - name: Game tests
+        working-directory: pachisi-lan
+        run: |
+          python3 -m unittest -v
+          node test_frontend.cjs
+      - name: Build Debian package
+        run: dpkg-buildpackage --build=binary --no-sign
+      - name: Test installation, upgrade, migration and removal
+        run: sudo bash packaging/test-install.sh ../classic-parcheesi-game_1.0.1_all.deb
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deb-${{ matrix.runner }}
+          path: ../classic-parcheesi-game_1.0.1_all.deb
+          if-no-files-found: error

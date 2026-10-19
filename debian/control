@@ -1,0 +1,17 @@
+Source: classic-parcheesi-game
+Section: games
+Priority: optional
+Maintainer: N4EAC <21286567+N4EAC@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+Rules-Requires-Root: no
+Homepage: https://github.com/N4EAC/classic-parcheesi-game
+
+Package: classic-parcheesi-game
+Architecture: all
+Pre-Depends: ${misc:Pre-Depends}, init-system-helpers (>= 1.54)
+Depends: ${misc:Depends}, python3 (>= 3.10), python3-aiohttp (>= 3.9), adduser
+Description: Classic Parcheesi browser game for a local network
+ A multiplayer Parcheesi game with computer opponents, animated pieces,
+ nine translated rules pages, sound, and a Victory Hall. Runs a dedicated
+ systemd service on TCP port 8080; players join with a web browser.

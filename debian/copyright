@@ -1,0 +1,22 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: Classic Parcheesi Game
+Source: https://github.com/N4EAC/classic-parcheesi-game
+
+Files: *
+Copyright: 2026 Classic Parcheesi Game contributors
+License: unspecified
+ No general source-code license has been declared by the project owner.
+ This package is distributed by the upstream project through GitHub Releases;
+ it is not an official Ubuntu or Debian archive package.
+
+Files: pachisi-lan/music2.mp3
+Copyright: Scott Buckley
+License: CC-BY-4.0
+ Signal to Noise by Scott Buckley, released under CC BY 4.0.
+ Track: https://www.scottbuckley.com.au/library/signal-to-noise/
+ License: https://creativecommons.org/licenses/by/4.0/legalcode
+
+Files: pachisi-lan/winner.wav
+Copyright: Project-supplied recording; author unspecified
+License: unspecified
+ No separate license has been declared for the project-supplied victory sound.

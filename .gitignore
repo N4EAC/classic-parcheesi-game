@@ -17,3 +17,12 @@ venv/
 /pachisi-lan/review/
 /tmp/
 /output/
+/*.deb
+/*.deb.sha256
+/debian/.debhelper/
+/debian/classic-parcheesi-game/
+/debian/debhelper-build-stamp
+/debian/files
+/debian/*.substvars
+/*.buildinfo
+/*.changes

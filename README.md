@@ -17,6 +17,31 @@ A classic Parcheesi board game for **2–4 players on the same network**, with o
 
 ## Download and install on Ubuntu Linux
 
+### Recommended: Ubuntu .deb package
+
+Supports **Ubuntu 24.04 LTS** on Intel/AMD (`amd64`) and ARM64 (`arm64`). The architecture-independent package contains the server, graphics, audio, and all nine rules pages. APT installs the Python dependencies, and the `pachisi-lan` service starts automatically at installation and boot.
+
+```bash
+sudo apt update
+sudo apt install -y curl
+curl -fLO https://github.com/N4EAC/classic-parcheesi-game/releases/latest/download/classic-parcheesi-game_1.0.1_all.deb
+curl -fLO https://github.com/N4EAC/classic-parcheesi-game/releases/latest/download/classic-parcheesi-game_1.0.1_all.deb.sha256
+sha256sum -c classic-parcheesi-game_1.0.1_all.deb.sha256
+sudo apt install ./classic-parcheesi-game_1.0.1_all.deb
+```
+
+Open **http://SERVER_IP:8080/** from devices on the same network (`hostname -I` shows the server address). If UFW is enabled, allow your LAN subnet, for example `sudo ufw allow from 10.0.0.0/24 to any port 8080 proto tcp`; replace that subnet with your own. The `.deb` does not change firewall rules.
+
+To transfer the downloaded package over SSH instead, run `scp classic-parcheesi-game_1.0.1_all.deb USER@SERVER_IP:~/`, connect with `ssh USER@SERVER_IP`, and run `sudo apt install ./classic-parcheesi-game_1.0.1_all.deb` there.
+
+The package installs files in `/usr/share/classic-parcheesi-game`. Installing it over the original shell installation migrates the standard service, saves its unit as `/etc/systemd/system/pachisi-lan.service.shell-installer-backup`, and leaves `/opt/pachisi-lan` available for recovery. Custom service overrides must be moved aside manually. Installation and upgrades end the current match; Victory Hall scores survive service restarts until reboot. Use APT for subsequent upgrades; do not rerun the old shell installer over the package.
+
+Remove with `sudo apt remove classic-parcheesi-game`, or purge package service settings with `sudo apt purge classic-parcheesi-game`. Neither command deletes a legacy `/opt/pachisi-lan` installation or its service backup. The dedicated service user and RAM scores are retained; reboot clears scores.
+
+On an iPad, Safari may block HTTP when its HTTPS-only protection is enabled. The game currently serves HTTP, so use the full `http://SERVER_IP:8080/` address. Safari's **Settings → Apps → Safari → Privacy & Security → Not Secure Connection Warning** setting controls HTTP warnings; if needed for your trusted LAN, temporarily turn it off and restore it afterward.
+
+### Alternative: shell installer
+
 Requires Ubuntu/Debian with **systemd**, an internet connection for installing Python dependencies, and a user with `sudo` access. The installer creates a dedicated service user, installs to `/opt/pachisi-lan`, and starts the game automatically after boot.
 
 [Download the latest game package](https://github.com/N4EAC/classic-parcheesi-game/releases/latest/download/classic-parcheesi-game.tar.gz) · [All releases](https://github.com/N4EAC/classic-parcheesi-game/releases)
@@ -71,6 +96,8 @@ The service name is `pachisi-lan`. Logs are available in the systemd journal.
 
 ### Update an existing installation
 
+For a `.deb` installation, download the new `.deb` and use `sudo apt install ./FILENAME.deb`. For a shell installation:
+
 Download and extract the latest package again, then rerun:
 
 ```bash
@@ -124,6 +151,10 @@ python pachisi-lan/server.py
 Open **http://localhost:8080**. Direct development launches keep Victory Hall only in process memory unless `PARCHEESI_HALL_FILE` is configured. The Ubuntu installer sets this to `/run/pachisi-lan/victory-hall.json` and preserves the runtime directory across service restarts.
 
 ## Tests
+
+The [Ubuntu package workflow](https://github.com/N4EAC/classic-parcheesi-game/actions/workflows/debian-package.yml) builds the `.deb` on Ubuntu 24.04 amd64 and arm64, runs the game tests, and checks fresh installation, service startup, HTTP routes, upgrade, score retention, migration from the shell installer, removal, and purge. Package lifecycle tests are destructive and intended only for disposable test machines.
+
+To build locally on Ubuntu: `sudo apt install debhelper`, then `dpkg-buildpackage --build=binary --no-sign` in this repository. The `.deb` is written to the parent directory.
 
 With the Python environment above activated:
 

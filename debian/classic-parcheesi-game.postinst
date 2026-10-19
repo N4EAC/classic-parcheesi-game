@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+if [ "$1" = configure ]; then
+    if ! getent passwd pachisi >/dev/null; then
+        adduser --system --group --home /nonexistent --no-create-home pachisi
+    fi
+fi
+#DEBHELPER#

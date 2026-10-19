@@ -1,0 +1,5 @@
+pachisi-lan/server.py usr/share/classic-parcheesi-game/
+pachisi-lan/index.html usr/share/classic-parcheesi-game/
+pachisi-lan/music2.mp3 usr/share/classic-parcheesi-game/
+pachisi-lan/winner.wav usr/share/classic-parcheesi-game/
+pachisi-lan/rules/*.html usr/share/classic-parcheesi-game/rules/

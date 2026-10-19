@@ -1,0 +1,25 @@
+#!/bin/sh
+set -e
+# Migrate only the service produced by our shell installer. Preserve its
+# virtualenv and data for recovery; never delete a user's custom service.
+legacy=/etc/systemd/system/pachisi-lan.service
+if [ "$1" = install ] || [ "$1" = upgrade ]; then
+    if [ -f "$legacy" ]; then
+        if grep -qx 'ExecStart=/opt/pachisi-lan/.venv/bin/python /opt/pachisi-lan/server.py' "$legacy" &&
+           grep -qx 'WorkingDirectory=/opt/pachisi-lan' "$legacy" &&
+           grep -qx 'User=pachisi' "$legacy"; then
+            if [ -e "$legacy.shell-installer-backup" ]; then
+                echo "Backup already exists: $legacy.shell-installer-backup; resolve before installing." >&2
+                exit 1
+            fi
+            if [ -d /run/systemd/system ]; then
+                deb-systemd-invoke stop pachisi-lan.service || true
+            fi
+            mv "$legacy" "$legacy.shell-installer-backup"
+        else
+            echo "Custom $legacy detected. Back it up and move it aside before installing." >&2
+            exit 1
+        fi
+    fi
+fi
+#DEBHELPER#
