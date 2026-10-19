@@ -27,15 +27,15 @@ Supports **Ubuntu 24.04 LTS** on Intel/AMD (`amd64`) and ARM64 (`arm64`). The ar
 ```bash
 sudo apt update
 sudo apt install -y curl
-curl -fLO https://github.com/N4EAC/classic-parcheesi-game/releases/latest/download/classic-parcheesi-game_1.0.2_all.deb
-curl -fLO https://github.com/N4EAC/classic-parcheesi-game/releases/latest/download/classic-parcheesi-game_1.0.2_all.deb.sha256
-sha256sum -c classic-parcheesi-game_1.0.2_all.deb.sha256
-sudo apt install ./classic-parcheesi-game_1.0.2_all.deb
+curl -fLO https://github.com/N4EAC/classic-parcheesi-game/releases/latest/download/classic-parcheesi-game_1.0.3_all.deb
+curl -fLO https://github.com/N4EAC/classic-parcheesi-game/releases/latest/download/classic-parcheesi-game_1.0.3_all.deb.sha256
+sha256sum -c classic-parcheesi-game_1.0.3_all.deb.sha256
+sudo apt install ./classic-parcheesi-game_1.0.3_all.deb
 ```
 
 Open **http://SERVER_IP:8080/** from devices on the same network (`hostname -I` shows the server address). If UFW is enabled, allow your LAN subnet, for example `sudo ufw allow from 10.0.0.0/24 to any port 8080 proto tcp`; replace that subnet with your own. The `.deb` does not change firewall rules.
 
-To transfer the downloaded package over SSH instead, run `scp classic-parcheesi-game_1.0.2_all.deb USER@SERVER_IP:~/`, connect with `ssh USER@SERVER_IP`, and run `sudo apt install ./classic-parcheesi-game_1.0.2_all.deb` there.
+To transfer the downloaded package over SSH instead, run `scp classic-parcheesi-game_1.0.3_all.deb USER@SERVER_IP:~/`, connect with `ssh USER@SERVER_IP`, and run `sudo apt install ./classic-parcheesi-game_1.0.3_all.deb` there.
 
 The package installs files in `/usr/share/classic-parcheesi-game`. Installing it over the original shell installation migrates the standard service, saves its unit as `/etc/systemd/system/pachisi-lan.service.shell-installer-backup`, and leaves `/opt/pachisi-lan` available for recovery. Custom service overrides must be moved aside manually. Installation and upgrades end the current match; Victory Hall scores survive service restarts until reboot. Use APT for subsequent upgrades; do not rerun the old shell installer over the package.
 

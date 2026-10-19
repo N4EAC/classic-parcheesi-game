@@ -32,6 +32,30 @@ vm.runInContext(`homeArrows.forEach((points,p)=>{
  if(Math.abs((mx-375)*(last[1]-375)-(my-375)*(last[0]-375))>1e-8)throw Error('Arrow is rotated away from lane');
  if((mx-375)*(last[0]-375)+(my-375)*(last[1]-375)<=0)throw Error('Arrow on wrong side');
 })`,sandbox);
+// Check the full pawn disk, including border and idle-shiver clearance, against
+// every triangle edge. Each numbered piece has a stable slot as others arrive.
+vm.runInContext(`homeArrows.forEach((triangle,p)=>{
+ const slots=Array.from({length:4},(_,i)=>xy(p,i,71)),clearance=9.2;
+ const cross=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
+ const orientation=Math.sign(cross(...triangle));
+ for(const slot of slots)for(let edge=0;edge<3;edge++){
+  const a=triangle[edge],b=triangle[(edge+1)%3];
+  const distance=orientation*cross(a,b,slot)/Math.hypot(b[0]-a[0],b[1]-a[1]);
+  if(distance<clearance)throw Error('HOME pawn spills out of its own color triangle');
+ }
+ for(let i=0;i<4;i++)for(let j=i+1;j<4;j++){
+  if(Math.hypot(slots[i][0]-slots[j][0],slots[i][1]-slots[j][1])<clearance*2)throw Error('HOME pawns overlap');
+ }
+})`,sandbox);
+const homeCircles=[];ctx.arc=(x,y,r)=>{if(Math.abs(r-7*1.05)<1e-8)homeCircles.push([x,y])};
+motion.matches=true;
+for(let player=0;player<4;player++)for(let mask=1;mask<16;mask++){
+ homeCircles.length=0;
+ vm.runInContext(`state={game:{started:false,pieces:Array.from({length:4},(_,p)=>Array.from({length:4},(_,i)=>p===${player}&&(${mask}&(1<<i))?71:-1))}};draw()`,sandbox);
+ const expected=vm.runInContext(`Array.from({length:4},(_,i)=>i).filter(i=>${mask}&(1<<i)).map(i=>xy(${player},i,71))`,sandbox);
+ assert.deepEqual(JSON.parse(JSON.stringify(homeCircles)),JSON.parse(JSON.stringify(expected)),'Rendered HOME slots stay fixed for every arrival order and subset');
+}
+vm.runInContext('state=null',sandbox);motion.matches=false;
 (async()=>{
  assert.equal(contexts.length,0,'No blocked audio context created during page load');
  assert.match(fs.readFileSync(__dirname+'/index.html','utf8'),/id="musicEnabled" type="checkbox">/);

@@ -176,7 +176,14 @@ function drawDice(now){
  const values=rolling?[1+Math.floor(Math.random()*6),1+Math.floor(Math.random()*6)]:pose.values||[null,null];
  values.forEach((value,i)=>drawDie(pose.x+(i-.5)*58,pose.y,value,pose.angle*(i?-1:1),pose.scale));
 }
-function xy(p,i,v){if(v===-1){const [x,y]=bases[p];return [x+(i%2?40:-40),y+(i>=2?40:-40)]}if(v===71)return [[335,416],[335,334],[415,416],[415,334]][p];if(v>=64)return lanes[p][v-64];return track[(start[p]+v)%68]}
+function homePosition(p,i){
+ const [a,b,tip]=homeArrows[p],bx=(a[0]+b[0])/2,by=(a[1]+b[1])/2;
+ const length=Math.hypot(bx-tip[0],by-tip[1]),ux=(bx-tip[0])/length,uy=(by-tip[1])/length;
+ // One inner slot and three outer slots, all inset from the triangle edges.
+ const radial=(i===0?.72:1.2)*unit,side=(i===0?0:(i-2)*.62)*unit;
+ return [tip[0]+ux*radial-uy*side,tip[1]+uy*radial+ux*side];
+}
+function xy(p,i,v){if(v===-1){const [x,y]=bases[p];return [x+(i%2?40:-40),y+(i>=2?40:-40)]}if(v===71)return homePosition(p,i);if(v>=64)return lanes[p][v-64];return track[(start[p]+v)%68]}
 // Keep visual movement independent of authoritative server positions.
 const jumps=new Map();
 function queueMoves(previous,next){
@@ -302,7 +309,7 @@ if(state){
    group.forEach((pawn,j)=>{
      const {p,i,v}=pawn;let {x,y}=pawn;
      let dx=0,dy=0,r=14;
-     if(v===71){dx=(j%2-.5)*17;dy=(Math.floor(j/2)-.5)*17;r=7}
+     if(v===71){r=7}
      else if(count>1){
        // Two pieces: left/right. Three or four: compact grid. Never obscure labels.
        const cols=count===2?2:Math.ceil(Math.sqrt(count));
