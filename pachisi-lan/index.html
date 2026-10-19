@@ -1,0 +1,341 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Classic Parcheesi Game</title><style>
+:root{font-family:system-ui,Arial;background:#151d2b;color:#f4f3ed}body{margin:0}header{background:#233247;padding:8px 18px}h1{margin:0;font-size:clamp(17px,4vw,22px);line-height:1.2}main{max-width:1228px;margin:22px auto;display:grid;grid-template-columns:minmax(0,798px) 320px;gap:20px;padding:0 14px}.panel{background:#243247;padding:18px;border-radius:14px}canvas{width:100%;aspect-ratio:1;background:#e6d6ae;border-radius:10px;touch-action:manipulation}button,input{font:inherit;padding:10px;border-radius:8px;border:0;margin:4px}button{background:#e7c575;color:#1e2530;font-weight:700;cursor:pointer}button:disabled{opacity:.35;cursor:default}input{width:85%;background:white;color:#222}.seat{border-left:7px solid;padding:10px;background:#34465b;margin:7px 0;border-radius:5px}.active{outline:2px solid white}.help{color:#c6d0d8;font-size:13px;line-height:1.5}#moves button{display:block;width:96%;text-align:left}#dice{font-size:25px;font-weight:800;padding:12px}#status{min-height:40px}@media(max-width:850px){main{grid-template-columns:1fr}}
+
+body{background:radial-gradient(ellipse at top,#273e45,#111e27 75%)}header{background:#14252de8;border-bottom:1px solid #dabb7255}h1{font-family:Georgia,serif;letter-spacing:.6px}.panel{background:#20313be8;border:1px solid #cdb37933;box-shadow:0 16px 45px #0003}canvas{box-shadow:0 5px 24px #0006}h2{font:600 19px Georgia,serif;color:#eddaa5}.seat{background:#ffffff08}.active{outline:1px solid #e7c575;background:#e7c57518}button:hover:enabled{background:#f8dda0}button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #8cd9ee;outline-offset:3px}a{color:#efd597}.rules-links{display:flex;flex-wrap:wrap;gap:14px;font-size:14px}#status{line-height:1.5}#dice{font-size:17px}#moves{max-height:340px;overflow:auto}@media(max-width:420px){main{padding:0 8px}.panel{padding:10px}header{padding:8px 14px}}
+
+#victory{width:min(680px,calc(100vw - 48px));box-sizing:border-box;border:2px solid #f6d483;border-radius:28px;background:radial-gradient(ellipse at top,#354b56,#12212d 75%);color:#fff8df;padding:clamp(24px,5vw,64px);text-align:center;overflow:hidden;box-shadow:0 25px 100px #0009}
+#victory::backdrop{background:#07111bd9}#victory h2{font-size:clamp(38px,8vw,76px);line-height:1.08;margin:12px 0 20px;overflow-wrap:anywhere;color:#fff4bf;text-shadow:0 3px 20px #edbd5060}#victory .tada{font:900 clamp(30px,6vw,54px) Georgia,serif;color:#f4cf72;letter-spacing:5px}#victory p{font-size:18px;color:#d4e1e5}#victory .victory-content{position:relative;z-index:1}#fireworks{position:absolute;inset:0;pointer-events:none}.spark{position:absolute;left:var(--x);top:var(--y);width:5px;height:5px;border-radius:50%;background:var(--color);box-shadow:0 0 8px var(--color);opacity:0;animation:firework 1.5s var(--delay) ease-out forwards}
+@keyframes firework{0%{opacity:0;transform:translate(0,0) scale(.3)}10%{opacity:1}75%{opacity:.85}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.3)}}
+@media(prefers-reduced-motion:reduce){.spark{animation:none;opacity:.65;transform:translate(var(--dx),var(--dy))}}
+
+#mobileChoices{display:none}
+@media(max-width:850px){
+ body[data-playing="true"]{padding-bottom:calc(190px + env(safe-area-inset-bottom,0px))}
+ body[data-playing="true"] header{padding:8px 14px}body[data-playing="true"] h1{font-size:20px}
+ body[data-playing="true"] main{margin-top:12px}
+ body[data-playing="true"] #board{display:block;width:min(100%,max(120px,calc(100dvh - 270px)));margin-inline:auto}
+ #playControls[data-playing="true"]{position:fixed;z-index:10;left:8px;right:8px;bottom:0;box-sizing:border-box;max-width:820px;margin-inline:auto;padding:12px 12px calc(12px + env(safe-area-inset-bottom,0px));background:#14252df5;border:1px solid #e7c57566;border-radius:16px 16px 0 0;box-shadow:0 -6px 24px #0006;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;backdrop-filter:blur(12px)}
+ #playControls[data-playing="true"] #status{grid-column:1/-1;min-height:0;margin:0;font-size:14px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ #playControls[data-playing="true"] #dice{min-width:0;padding:0;align-self:center;font-size:14px;line-height:1.4;overflow-wrap:anywhere}
+ #playControls[data-playing="true"] #roll{margin:0;min-height:44px;min-width:110px}
+ #playControls[data-playing="true"] #moves{display:none}
+ #playControls[data-playing="true"] #mobileChoices:not([hidden]){grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+ #mobileMove{width:100%;min-width:0;min-height:44px;font:inherit;font-size:16px;border:1px solid #cdb37988;border-radius:8px;background:#f7f1df;color:#172630;padding:8px}
+ #mobileMoveBtn{min-height:44px;margin:0;font-size:14px}
+}
+
+@media(min-width:600px) and (max-width:850px) and (max-height:500px) and (orientation:landscape){
+ body[data-playing="true"] main>section{width:calc(100% - 320px);box-sizing:border-box}
+ body[data-playing="true"] #board{width:min(100%,max(120px,calc(100dvh - 120px)))}
+ #playControls[data-playing="true"]{left:auto;right:12px;bottom:12px;width:300px;border-radius:16px}
+}
+
+#lobbyAudio{margin-bottom:10px}#lobbyMusicLabel{display:inline-flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;color:#e6dbc1}#musicEnabled{width:16px;height:16px;margin:0;accent-color:#e7c575;cursor:pointer}#musicStatus{font-size:12px;margin:6px 0}
+</style></head><body><header><h1>🎲 Classic Parcheesi Game</h1></header><main><section class="panel"><canvas aria-label="Parcheesi board with numbered pawns" id="board" width="750" height="750"></canvas><p class="help">Click the dice in your base, or use Roll dice, on your turn. The dice jump to the center to roll. Then choose a legal move from the right panel. Play each die in sequence; both can move the same piece when each landing is legal. Pieces travel counterclockwise and turn into their own HOME lanes. Two pieces of one color form a blockade.</p><nav class="rules-links" aria-label="Game rules"><a href="/rules/en" target="_blank" rel="noopener">English</a><a href="/rules/pt-BR" target="_blank" rel="noopener">Português (Brasil)</a><a href="/rules/es-ES" target="_blank" rel="noopener">Español (España)</a><a href="/rules/fr-FR" target="_blank" rel="noopener">Français (France)</a><a href="/rules/it-IT" target="_blank" rel="noopener" lang="it-IT">Italiano</a><a href="/rules/ru-RU" target="_blank" rel="noopener" lang="ru-RU">Русский</a><a href="/rules/ja-JP" target="_blank" rel="noopener" lang="ja-JP">日本語</a><a href="/rules/zh-CN" target="_blank" rel="noopener" lang="zh-CN">中文（简体）</a><a href="/rules/hi-IN" target="_blank" rel="noopener" lang="hi-IN">हिन्दी</a><a href="/victory-hall" target="_blank" rel="noopener">🏆 Victory Hall</a></nav></section><aside class="panel"><div id="lobbyAudio"><label id="lobbyMusicLabel"><input id="musicEnabled" type="checkbox"> Lobby music</label><p id="musicStatus" class="help" role="status" hidden></p></div><div id="join"><h2>Join game</h2><input id="nickname" maxlength="20" placeholder="Nickname"><button id="joinBtn">Join game</button></div><h2>Players</h2><div id="seats"></div><div id="playControls" aria-label="Turn controls"><p id="status" role="status" aria-live="polite"></p><div id="dice">—</div><div id="moves"></div><button id="roll">Roll dice</button><div id="mobileChoices" hidden><select id="mobileMove" aria-label="Choose a legal move"></select><button id="mobileMoveBtn">Move piece</button></div></div><button id="start">Start with computers</button><button id="startHuman">Start humans only</button><button id="reset">⏹ Reset game</button><button id="sound">🔊 Sound on</button><p class="help">2–4 human players supported; optional computer opponents. The host runs on port 8080. Unoccupied colors are skipped in human-only games. Disconnected players are replaced by computers while other humans remain. The game resets when the last human leaves.</p></aside></main><audio id="lobbyTrack" src="/music2.mp3?v=2" loop preload="metadata"></audio><dialog id="victory" aria-labelledby="winnerName" aria-describedby="winnerMessage"><div id="fireworks" aria-hidden="true"></div><div class="victory-content"><div class="tada">TA-DA!</div><h2 id="winnerName"></h2><p id="winnerMessage">All four pieces are HOME. What a finish!</p><button id="dismissVictory" autofocus>Back to the board</button></div></dialog><script>
+const $=id=>document.getElementById(id),canvas=$('board'),ctx=canvas.getContext('2d');let ws,seat=null,state=null,lastEvent=null,rolling=false,sound=true,audio=null;
+const colors=['#cf3936','#39834b','#e5b33d','#3478bb'],names=['Red','Green','Yellow','Blue'],start=[55,38,4,21],safe=new Set([4,12,21,29,38,46,55,63]);
+// Unlock Web Audio inside a real input gesture, before WebSocket events arrive.
+async function unlockAudio(){
+ if(!sound)return false;
+ try{
+  if(!audio||audio.state==='closed'){
+   const Audio=window.AudioContext||window.webkitAudioContext;
+   if(!Audio)return false;
+   audio=new Audio();void loadWinnerAudio();
+   const silent=audio.createBufferSource();silent.buffer=audio.createBuffer(1,1,audio.sampleRate);silent.connect(audio.destination);silent.start();
+  }
+  if(audio.state!=='running')await audio.resume();
+  return audio.state==='running';
+ }catch(e){return false}
+}
+const lobbyMusic=$('lobbyTrack');lobbyMusic.volume=.35;
+let musicBlocked=false,musicWanted=false,musicPending=false;
+function updateMusicUI(message){
+ $('lobbyAudio').hidden=Boolean(state?.game.started);
+ $('musicEnabled').disabled=!sound;$('musicEnabled').checked=musicWanted;
+ const text=message||(!sound?'Sound is off.':'');
+ $('musicStatus').textContent=text;$('musicStatus').hidden=!text;
+}
+function syncLobbyMusic(){
+ const waiting=state&&!state.game.started;
+ if(!waiting||!sound||!musicWanted||document.hidden||ws?.readyState!==1){
+  lobbyMusic.pause();if(state?.game.started)lobbyMusic.currentTime=0;updateMusicUI();return;
+ }
+ if(musicBlocked||!lobbyMusic.paused||musicPending){updateMusicUI();return}
+ musicPending=true;
+ try{
+  const playback=lobbyMusic.play();
+  Promise.resolve(playback).then(()=>{
+   if(!sound||!musicWanted||state?.game.started||document.hidden||ws?.readyState!==1)lobbyMusic.pause();updateMusicUI();
+  }).catch(error=>{
+   if(state?.game.started||!sound||!musicWanted)return;
+   musicBlocked=error.name==='NotAllowedError';
+   updateMusicUI(musicBlocked?'Music could not start. Toggle Lobby music to retry.':'Music could not play. Check the connection and toggle Lobby music to retry.');
+  }).finally(()=>{musicPending=false});
+ }catch(error){musicPending=false;updateMusicUI('Music could not play. Toggle Lobby music to retry.')}
+}
+function audioGesture(){void unlockAudio()}
+$('musicEnabled').onchange=()=>{
+ musicWanted=$('musicEnabled').checked;musicBlocked=false;syncLobbyMusic();
+};
+lobbyMusic.addEventListener('playing',()=>updateMusicUI());
+lobbyMusic.addEventListener('error',()=>updateMusicUI('Music could not load. Refresh the page after installing the latest update.'));
+document.addEventListener('pointerdown',audioGesture,{capture:true});
+document.addEventListener('click',audioGesture,{capture:true});
+document.addEventListener('keydown',audioGesture,{capture:true});
+document.addEventListener('visibilitychange',syncLobbyMusic);
+const activeSounds=new Set();
+function send(action,extra={}){if(ws?.readyState===1)ws.send(JSON.stringify({action,...extra}))}
+function connect(){ws=new WebSocket((location.protocol==='https:'?'wss':'ws')+'://'+location.host+'/ws');ws.onopen=()=>{syncLobbyMusic()};ws.onclose=()=>{seat=null;jumps.clear();if(state)render();syncLobbyMusic();$('status').textContent='Disconnected — reconnecting…';setTimeout(connect,1400)};ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='joined'){seat=m.seat;render();return}if(m.type==='state'){if(m.event?.id!==lastEvent&&lastEvent!==null)effect(m.event);lastEvent=m.event?.id;queueMoves(state,m);syncDice(state,m);state=m;render()}}}
+window.addEventListener('pagehide',()=>{lobbyMusic.pause();ws?.close()});
+$('joinBtn').onclick=()=>send('join',{name:$('nickname').value});$('start').onclick=()=>send('start',{with_bots:true});$('startHuman').onclick=()=>send('start',{with_bots:false});$('roll').onclick=()=>send('roll');$('reset').onclick=()=>{if(confirm('Reset the game and stop all computer opponents?'))send('reset')};$('sound').setAttribute('aria-pressed','true');
+$('sound').onclick=()=>{
+ sound=!sound;$('sound').textContent=sound?'🔊 Sound on':'🔇 Sound off';$('sound').setAttribute('aria-pressed',String(sound));
+ syncLobbyMusic();if(sound)void unlockAudio();
+ else{stopWinnerAudio();for(const o of activeSounds){try{o.stop()}catch(e){}}activeSounds.clear()}
+};
+async function beep(f,d=.1,delay=0){
+ if(!sound||!await unlockAudio()||!sound)return;
+ try{
+  const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime+delay;
+  o.type='triangle';o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.16,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  o.connect(g).connect(audio.destination);activeSounds.add(o);
+  o.onended=()=>{activeSounds.delete(o);o.disconnect();g.disconnect()};o.start(t);o.stop(t+d+.02);
+ }catch(e){}
+}
+function effect(ev){if(!ev)return;if(ev.kind==='roll'){for(let i=0;i<9;i++)beep(200+Math.random()*400,.06,i*.055);}else if(ev.kind==='move'){for(let i=0;i<Math.min(ev.steps,12);i++)beep(320+i%3*90,.075,i*.095);if(ev.capture)beep(760,.28,.5);if(ev.home)beep(960,.35,.5)}}
+const unit=750/19,P=(x,y)=>[(x+.5)*unit,(y+.5)*unit];
+// Four rotated 17-space arms, with no duplicate or crossing cells.
+const sector=[...Array.from({length:8},(_,i)=>[10,18-i]),...Array.from({length:8},(_,i)=>[11+i,10]),[18,9]];
+const track=Array.from({length:4},(_,q)=>sector.map(([x,y])=>{for(let n=0;n<q;n++)[x,y]=[y,18-x];return P(x,y)})).flat();
+const lanes=[Array.from({length:7},(_,i)=>P(1+i,9)),Array.from({length:7},(_,i)=>P(9,1+i)),Array.from({length:7},(_,i)=>P(9,17-i)),Array.from({length:7},(_,i)=>P(17-i,9))];
+// Each triangle continues its own lane directly into the center HOME square.
+const homeArrows=lanes.map(lane=>{
+ const [x,y]=lane[lane.length-1],cx=375,cy=375;
+ const length=Math.hypot(x-cx,y-cy),ux=(x-cx)/length,uy=(y-cy)/length,half=unit*1.5;
+ const bx=cx+ux*half,by=cy+uy*half;
+ return [[bx-uy*half,by+ux*half],[bx+uy*half,by-ux*half],[cx,cy]];
+});
+const bases=[P(3.5,14.5),P(3.5,3.5),P(14.5,14.5),P(14.5,3.5)];
+// One travelling pair: current base -> center roll -> next player's base.
+const diceTimeline=[];
+let diceRest={x:bases[0][0],y:bases[0][1]+105,values:null};
+function diceBase(player){return {x:bases[player][0],y:bases[player][1]+105}}
+function dicePose(now){
+ while(diceTimeline.length&&now>=diceTimeline[0].end){
+  const finished=diceTimeline.shift();diceRest={...finished.to,values:finished.values};
+ }
+ const action=diceTimeline[0];
+ if(!action)return {...diceRest,mode:'rest',angle:0,scale:1};
+ const t=Math.max(0,Math.min(1,(now-action.start)/(action.end-action.start)));
+ const eased=t*t*(3-2*t),lift=action.mode==='jump'?Math.sin(Math.PI*t)*65:0;
+ return {x:action.from.x+(action.to.x-action.from.x)*eased,y:action.from.y+(action.to.y-action.from.y)*eased-lift,
+  values:action.values,mode:action.mode,angle:action.mode==='roll'?Math.sin(t*Math.PI*12)*.3:Math.sin(t*Math.PI*2)*.12,
+  scale:action.mode==='jump'?1+Math.sin(Math.PI*t)*.08:1};
+}
+function addDiceAction(to,duration,mode,values,notBefore=0){
+ const now=performance.now();dicePose(now);
+ const last=diceTimeline.at(-1),from=last?last.to:diceRest;
+ const start=Math.max(now,last?last.end:now,notBefore);
+ diceTimeline.push({from:{x:from.x,y:from.y},to,start,end:start+duration,mode,values});
+}
+function syncDice(previous,next){
+ const g=next.game,now=performance.now();
+ if(!g.started){diceTimeline.length=0;diceRest={...diceBase(seat??0),values:null};return}
+ const freshEvent=next.event?.id!==previous?.event?.id;
+ if(!previous?.game.started){diceTimeline.length=0;diceRest={...(g.rolled||g.winner!==null?{x:375,y:375}:diceBase(g.turn)),values:g.dice};return}
+ if(freshEvent&&['roll','penalty'].includes(next.event?.kind)){
+  const values=next.event.dice;
+  if(reducedMotion.matches){diceTimeline.length=0;diceRest={...(g.turn!==next.event.player?diceBase(g.turn):{x:375,y:375}),values};return}
+  addDiceAction({x:375,y:375},230,'jump',values);
+  addDiceAction({x:375,y:375},320,'roll',values);
+  addDiceAction({x:375,y:375},60,'hold',values);
+ }
+ if(previous.game.turn!==g.turn&&g.winner===null){
+  const values=diceTimeline.at(-1)?.values||diceRest.values;
+  if(reducedMotion.matches){diceTimeline.length=0;diceRest={...diceBase(g.turn),values};return}
+  const lastPawnLanding=Math.max(now,...Array.from(jumps.values(),queue=>queue.at(-1)?.end||now));
+  addDiceAction(diceBase(g.turn),230,'jump',values,lastPawnLanding);
+ }
+}
+function drawDice(now){
+ const pose=dicePose(now);rolling=pose.mode==='roll';
+ const values=rolling?[1+Math.floor(Math.random()*6),1+Math.floor(Math.random()*6)]:pose.values||[null,null];
+ values.forEach((value,i)=>drawDie(pose.x+(i-.5)*58,pose.y,value,pose.angle*(i?-1:1),pose.scale));
+}
+function xy(p,i,v){if(v===-1){const [x,y]=bases[p];return [x+(i%2?40:-40),y+(i>=2?40:-40)]}if(v===71)return [[335,416],[335,334],[415,416],[415,334]][p];if(v>=64)return lanes[p][v-64];return track[(start[p]+v)%68]}
+// Keep visual movement independent of authoritative server positions.
+const jumps=new Map();
+function queueMoves(previous,next){
+ if(!previous||!next.game.started||!previous.game.started||!['move','win'].includes(next.event?.kind)){
+  if(!next.game.started||next.event?.kind==='penalty')jumps.clear();return;
+ }
+ if(reducedMotion.matches||document.hidden){jumps.clear();return}
+ const now=performance.now();
+ next.game.pieces.forEach((pieces,p)=>pieces.forEach((to,i)=>{
+  const from=previous.game.pieces[p][i];
+  if(to===from)return;
+  if(to<0||to<from){jumps.delete(p+':'+i);return}
+  const points=from===-1?[xy(p,i,from),xy(p,i,to)]:Array.from({length:to-from+1},(_,n)=>xy(p,i,from+n));
+  const duration=from===-1?240:Math.min(1400,(points.length-1)*110);
+  const key=p+':'+i,queue=jumps.get(key)||[];
+  queue.push({points,start:Math.max(now,queue.length?queue[queue.length-1].end:now),duration});
+  queue[queue.length-1].end=queue[queue.length-1].start+duration;jumps.set(key,queue);
+ }));
+}
+function jumpPosition(p,i,now){
+ const key=p+':'+i,queue=jumps.get(key);if(!queue)return null;
+ while(queue.length&&now>=queue[0].end)queue.shift();
+ if(!queue.length){jumps.delete(key);return null}
+ const jump=queue[0],progress=Math.max(0,Math.min(1,(now-jump.start)/jump.duration));
+ const segment=progress*(jump.points.length-1),index=Math.min(jump.points.length-2,Math.floor(segment)),t=segment-index;
+ const a=jump.points[index],b=jump.points[index+1];
+ return {x:a[0]+(b[0]-a[0])*t,y:a[1]+(b[1]-a[1])*t-Math.sin(t*Math.PI)*13,settle:progress};
+}
+// Render the wood once; moving pieces reuse this cached surface.
+function createWoodSurface(){
+ const surface=document.createElement('canvas');surface.width=750;surface.height=750;
+ const wood=surface.getContext('2d'),base=wood.createLinearGradient(0,0,750,750);
+ base.addColorStop(0,'#d5a165');base.addColorStop(.45,'#ab713d');base.addColorStop(1,'#dfaf72');
+ wood.fillStyle=base;wood.fillRect(0,0,750,750);
+ let seed=1987;const random=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
+ for(let line=0;line<700;line++){
+  const y=random()*750,bend=3+random()*9,phase=random()*6.28;
+  wood.beginPath();for(let x=0;x<=750;x+=12){const yy=y+Math.sin(x/95+phase)*bend+Math.sin(x/34+phase)*1.5;if(x)wood.lineTo(x,yy);else wood.moveTo(x,yy)}
+  wood.strokeStyle=line%3?'rgba(77,37,12,.12)':'rgba(255,228,177,.16)';wood.lineWidth=.4+random()*.8;wood.stroke();
+ }
+ for(const [x,y] of [[108,210],[610,558],[450,90]])for(let ring=0;ring<9;ring++){
+  wood.beginPath();wood.ellipse(x,y,14+ring*5,2+ring*1.7,.06,0,Math.PI*2);wood.strokeStyle='rgba(79,39,16,.11)';wood.lineWidth=1;wood.stroke();
+ }
+ return surface;
+}
+const woodSurface=createWoodSurface();
+function woodGrain(x,y,width,height,opacity){ctx.save();ctx.globalAlpha=opacity;ctx.drawImage(woodSurface,x,y,width,height,x,y,width,height);ctx.restore()}
+function cell(x,y,fill){ctx.fillStyle=fill;ctx.fillRect(x-unit/2+1,y-unit/2+1,unit-2,unit-2);woodGrain(x-unit/2+1,y-unit/2+1,unit-2,unit-2,.2);ctx.strokeStyle='#897454';ctx.lineWidth=1;ctx.strokeRect(x-unit/2+1,y-unit/2+1,unit-2,unit-2)}
+const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
+function pawnWiggle(p,i,now){
+ if(reducedMotion.matches)return 0;
+ const phase=((now+(p*4+i)*683)%11000)/850;
+ return phase<1?Math.sin(phase*Math.PI*12)*Math.sin(phase*Math.PI):0;
+}
+function draw(){const now=performance.now();ctx.textBaseline='alphabetic';ctx.textAlign='center';ctx.drawImage(woodSurface,0,0);ctx.strokeStyle='#58331b';ctx.lineWidth=12;ctx.strokeRect(6,6,738,738);ctx.strokeStyle='#edc893';ctx.lineWidth=2;ctx.strokeRect(15,15,720,720);
+const regions=[{x:0,y:0,c:colors[1]},{x:11,y:0,c:colors[3]},{x:0,y:11,c:colors[0]},{x:11,y:11,c:colors[2]}];for(const r of regions){ctx.fillStyle=r.c;ctx.fillRect(r.x*unit+18,r.y*unit+18,8*unit-36,8*unit-36);woodGrain(r.x*unit+18,r.y*unit+18,8*unit-36,8*unit-36,.24);ctx.strokeStyle='#e7ce9d';ctx.lineWidth=5;ctx.strokeRect(r.x*unit+30,r.y*unit+30,8*unit-60,8*unit-60);ctx.font='bold 72px Georgia';ctx.textAlign='center';ctx.fillStyle='#f7e4b0';const bx=(r.x+4)*unit,by=(r.y+4)*unit;ctx.beginPath();ctx.moveTo(bx,by-18);ctx.lineTo(bx+18,by);ctx.lineTo(bx,by+18);ctx.lineTo(bx-18,by);ctx.closePath();ctx.fill()}
+track.forEach(([x,y],i)=>{cell(x,y,safe.has(i)?'#c9ab73':'#fff4d9');if(safe.has(i)){ctx.fillStyle='#66523b';ctx.font='24px serif';ctx.textAlign='center';ctx.beginPath();for(let k=0;k<10;k++){const a=k*Math.PI/5-Math.PI/2,rr=k%2?4:10;const px=x+Math.cos(a)*rr,py=y+Math.sin(a)*rr;if(k)ctx.lineTo(px,py);else ctx.moveTo(px,py)}ctx.closePath();ctx.fill()}});
+start.forEach((index,p)=>{const [x,y]=track[index];ctx.beginPath();ctx.arc(x,y,13,0,Math.PI*2);ctx.strokeStyle=colors[p];ctx.lineWidth=3;ctx.stroke()});
+lanes.forEach((lane,p)=>lane.forEach(([x,y])=>cell(x,y,colors[p])));
+homeArrows.forEach((points,p)=>{ctx.beginPath();ctx.moveTo(...points[0]);ctx.lineTo(...points[1]);ctx.lineTo(...points[2]);ctx.closePath();ctx.fillStyle=colors[p];ctx.fill();ctx.save();ctx.clip();woodGrain(8*unit,8*unit,3*unit,3*unit,.2);ctx.restore()});
+drawDice(now);
+if(state){
+ // Group every pawn by its actual board coordinate. Offset stacked pawns so
+ // no marker is ever painted over another marker (including mixed colors).
+ const groups=new Map();
+ state.game.pieces.forEach((pieces,p)=>pieces.forEach((v,i)=>{
+   if(!Number.isInteger(v)||v < -1||v>71){console.warn('Invalid pawn position',p,i,v);return}
+   const [x,y]=xy(p,i,v);
+   if(!Number.isFinite(x)||!Number.isFinite(y)){console.warn('Missing board coordinate',p,i,v);return}
+   const key=v===-1?`base-${p}-${i}`:v===71?`home-${p}`:`${Math.round(x)}-${Math.round(y)}`;
+   if(!groups.has(key))groups.set(key,[]);
+   groups.get(key).push({p,i,x,y,v});
+ }));
+ for(const group of groups.values()){
+   const count=group.length;
+   group.forEach((pawn,j)=>{
+     const {p,i,v}=pawn;let {x,y}=pawn;
+     let dx=0,dy=0,r=14;
+     if(v===71){dx=(j%2-.5)*17;dy=(Math.floor(j/2)-.5)*17;r=7}
+     else if(count>1){
+       // Two pieces: left/right. Three or four: compact grid. Never obscure labels.
+       const cols=count===2?2:Math.ceil(Math.sqrt(count));
+       const rows=Math.ceil(count/cols);
+       dx=(j%cols-(cols-1)/2)*18;dy=(Math.floor(j/cols)-(rows-1)/2)*18;
+       r=count<=2?9:8;
+     }
+     const hop=jumpPosition(p,i,now);
+     if(hop){x=hop.x;y=hop.y;dx*=hop.settle;dy*=hop.settle}
+     r*=1.05;
+     // A brief, staggered shiver stays anchored to the original square.
+     const wiggle=hop?0:pawnWiggle(p,i,now),shift=wiggle*(count>1||v===71?.2:.8);
+     ctx.save();ctx.translate(x+dx+shift,y+dy);ctx.rotate(wiggle*.08);ctx.translate(-x-dx,-y-dy);
+     ctx.beginPath();ctx.arc(x+dx,y+dy,r,0,Math.PI*2);
+     const shine=ctx.createRadialGradient(x+dx-5,y+dy-6,1,x+dx,y+dy,r);shine.addColorStop(0,'#ffffff');shine.addColorStop(.35,colors[p]);shine.addColorStop(1,colors[p]);ctx.fillStyle=shine;ctx.shadowColor='#0006';ctx.shadowBlur=4;ctx.shadowOffsetY=2;ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;ctx.strokeStyle='#fff';ctx.lineWidth=2.5;ctx.stroke();
+     ctx.fillStyle='#fff';ctx.font=`bold ${r<12?10:14}px system-ui`;
+     ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(i+1),x+dx,y+dy+1);ctx.restore();
+   });
+ }
+}
+}
+
+function drawDie(cx,cy,n,angle=0,scale=1){ctx.save();ctx.translate(cx,cy);ctx.scale(.65*scale,.65*scale);ctx.rotate(angle);ctx.shadowColor='#0007';ctx.shadowBlur=9;ctx.fillStyle='#fffdf6';ctx.strokeStyle='#46372c';ctx.lineWidth=3;ctx.beginPath();ctx.roundRect(-32,-32,64,64,9);ctx.fill();ctx.stroke();ctx.shadowBlur=0;if(n){const dots={1:[[0,0]],2:[[-16,-16],[16,16]],3:[[-16,-16],[0,0],[16,16]],4:[[-16,-16],[16,-16],[-16,16],[16,16]],5:[[-16,-16],[16,-16],[0,0],[-16,16],[16,16]],6:[[-16,-18],[16,-18],[-16,0],[16,0],[-16,18],[16,18]]};ctx.fillStyle='#25221e';for(const [x,y] of dots[n]){ctx.beginPath();ctx.arc(x,y,5.5,0,Math.PI*2);ctx.fill()}}else{ctx.fillStyle='#39342c';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText('CLICK',0,-3);ctx.fillText('TO ROLL',0,12)}ctx.restore()}
+canvas.onclick=e=>{const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)*750/r.width,y=(e.clientY-r.top)*750/r.height;const pose=dicePose(performance.now());if(Math.abs(x-pose.x)<55&&Math.abs(y-pose.y)<26&&canRoll())send('roll')};
+function canRoll(){const g=state?.game;return seat!==null&&g?.started&&!g.rolled&&g.turn===seat&&g.winner===null&&!diceTimeline.length}
+function options(){return state&&seat===state.game.turn?state.options||[]:[]}
+function escape(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+let celebratedWinner=null;
+let winnerBuffer=null,winnerLoading=null,winnerSource=null,winnerAudioGeneration=0;
+async function loadWinnerAudio(){
+ if(winnerBuffer)return winnerBuffer;
+ if(!audio)return null;
+ if(!winnerLoading)winnerLoading=(async()=>{
+  try{
+   const response=await fetch('/winner.wav');if(!response.ok)throw Error('Winner audio unavailable');
+   winnerBuffer=await audio.decodeAudioData(await response.arrayBuffer());return winnerBuffer;
+  }catch(e){return null}finally{winnerLoading=null}
+ })();
+ return winnerLoading;
+}
+function stopWinnerAudio(){
+ winnerAudioGeneration++;
+ if(winnerSource){try{winnerSource.stop()}catch(e){}activeSounds.delete(winnerSource);winnerSource=null}
+}
+async function victoryFanfare(){
+ stopWinnerAudio();const generation=winnerAudioGeneration;
+ if(!sound||!await unlockAudio())return;
+ const buffer=await loadWinnerAudio();
+ if(!buffer||!sound||generation!==winnerAudioGeneration)return;
+ const source=audio.createBufferSource();source.buffer=buffer;source.connect(audio.destination);
+ winnerSource=source;activeSounds.add(source);
+ source.onended=()=>{activeSounds.delete(source);source.disconnect();if(winnerSource===source)winnerSource=null};source.start();
+}
+function syncVictory(){
+ const winner=state.game.winner;
+ if(winner===null){if(celebratedWinner!==null)stopWinnerAudio();celebratedWinner=null;if($('victory').open)$('victory').close();return}
+ if(celebratedWinner===winner||jumps.size||diceTimeline.length)return;
+ celebratedWinner=winner;
+ $('winnerName').textContent=(state.seats[winner]?.name||names[winner])+' wins!';
+ const fireworks=$('fireworks');fireworks.replaceChildren();
+ const palette=['#ffd66e','#8ee7ed','#ff92b2','#b8a0ff','#f7fff0'];
+ for(let burst=0;burst<7;burst++)for(let ray=0;ray<18;ray++){
+  const spark=document.createElement('span'),angle=ray/18*Math.PI*2,radius=50+(ray%3)*16;
+  spark.className='spark';
+  const vars={'--x':(12+(burst*29)%77)+'%','--y':(14+(burst*17)%65)+'%','--dx':Math.cos(angle)*radius+'px','--dy':Math.sin(angle)*radius+20+'px','--color':palette[(burst+ray)%palette.length],'--delay':burst*.48+'s'};
+  for(const [key,value] of Object.entries(vars))spark.style.setProperty(key,value);
+  fireworks.appendChild(spark);
+ }
+ $('victory').showModal();victoryFanfare();
+}
+$('dismissVictory').onclick=()=>$('victory').close();
+function moveKey(o){return o.piece+':'+o.steps+':'+Boolean(o.enter)}
+function renderMobileControls(moves){
+ const playing=Boolean(state?.game.started);
+ document.body.setAttribute('data-playing',String(playing));$('playControls').setAttribute('data-playing',String(playing));
+ const select=$('mobileMove'),previous=select.value;select.replaceChildren();
+ moves.forEach(o=>{const option=document.createElement('option');option.value=moveKey(o);option.textContent=`Piece ${o.piece+1}: ${o.enter?'Enter (5)':`move ${o.steps} spaces`}`;select.appendChild(option)});
+ if(moves.some(o=>moveKey(o)===previous))select.value=previous;
+ else if(moves.length)select.value=moveKey(moves[0]);
+ $('mobileChoices').hidden=!playing||moves.length===0;
+ $('mobileMoveBtn').disabled=moves.length===0;
+}
+$('mobileMoveBtn').onclick=()=>{const choice=options().find(o=>moveKey(o)===$('mobileMove').value);if(choice)send('move',choice)};
+function render(){if(!state)return;const g=state.game;$('join').style.display=seat!==null||g.started?'none':'block';$('seats').innerHTML=state.seats.map((s,i)=>`<div class="seat ${g.started&&g.turn===i?'active':''}" style="border-color:${colors[i]}"><b>${names[i]}</b> — ${s?escape(s.name)+(s.bot?' 🤖':''):'Open seat'}${i===seat?' (You)':''}</div>`).join('');$('status').textContent=g.message;$('dice').textContent=g.dice?`${g.dice[0]} + ${g.dice[1]}  •  Remaining: ${g.remaining.join(', ')||'none'}`:'—';$('start').disabled=seat===null||g.started;$('startHuman').disabled=seat===null||g.started||state.seats.filter(Boolean).length<2;$('roll').disabled=!canRoll();$('reset').disabled=(seat===null&&!state.can_reset)||!g.started;const moves=options();renderMobileControls(moves);$('moves').innerHTML=moves.length?'<h3>Choose a move</h3>':'';moves.forEach(o=>{const b=document.createElement('button');b.textContent=`Piece ${o.piece+1}: ${o.enter?'ENTER (5)':`move ${o.steps} spaces`}`;b.onclick=()=>send('move',o);$('moves').appendChild(b)});draw();syncVictory();syncLobbyMusic()}
+// Idle frames do not redraw the board; background tabs and reduced motion stay still.
+let wasWiggling=false;
+setInterval(()=>{
+ if(document.hidden){jumps.clear();return}if(!state)return;
+ const now=performance.now();
+ const wiggling=!reducedMotion.matches&&state.game.pieces.some((pieces,p)=>pieces.some((v,i)=>Math.abs(pawnWiggle(p,i,now))>.0001));
+ if(wiggling||wasWiggling||jumps.size||diceTimeline.length){draw();$('roll').disabled=!canRoll();if(state.game.winner!==null)syncVictory()}
+ wasWiggling=wiggling;
+},20);
+reducedMotion.addEventListener('change',()=>{wasWiggling=false;jumps.clear();if(reducedMotion.matches&&diceTimeline.length){const last=diceTimeline.at(-1);diceRest={...last.to,values:last.values};diceTimeline.length=0}draw();if(state){$('roll').disabled=!canRoll();syncVictory()}});
+connect();draw();
+</script></body></html>
