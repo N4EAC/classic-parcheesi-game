@@ -252,7 +252,7 @@ function drawPathGlows(now){
  for(let i=pathGlows.length-1;i>=0;i--){
   const glow=pathGlows[i],phase=(now-glow.start)/glow.duration;
   if(phase>=1){pathGlows.splice(i,1);continue}
-  const [x,y]=glowCells[glow.cell],opacity=Math.sin(Math.PI*phase)**2*(.25+.3*musicEnvelope);
+  const [x,y]=glowCells[glow.cell],opacity=Math.sin(Math.PI*phase)**2*(.33+.34*musicEnvelope);
   ctx.fillStyle=`rgba(255,201,72,${opacity})`;
   ctx.fillRect(x-unit/2+2,y-unit/2+2,unit-4,unit-4);
   ctx.strokeStyle=`rgba(255,220,110,${opacity})`;ctx.lineWidth=1.5;
