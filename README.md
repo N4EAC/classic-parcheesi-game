@@ -4,7 +4,7 @@ A classic Parcheesi board game for **2–4 players on the same network**, with o
 
 ![Classic Parcheesi Game screenshot](docs/screenshots/classic-parcheesi-game.png)
 
-[▶ Watch the lobby demo](demo_lobby.mov) — see the music-driven glow on the board paths and pieces.
+[▶ Watch the lobby demo](https://youtu.be/ckczbhcxjfs) — see the music-driven glow on the board paths and pieces.
 
 ## Features
 

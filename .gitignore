@@ -27,3 +27,5 @@ venv/
 /debian/*.substvars
 /*.buildinfo
 /*.changes
+
+/demo_lobby.mov
