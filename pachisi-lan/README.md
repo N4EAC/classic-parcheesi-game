@@ -96,11 +96,13 @@ All nine translated rules pages include the credit: Music: “Signal To Noise”
 
 ## Travelling dice
 
-One pair of dice rests at the lower center of the active player's base. Clicking the pair or Roll dice sends it along a jump arc to the center, where the faces roll and settle. The pair stays in the center while dice and bonuses are played. At the end of the turn it jumps to the next occupied player's base after the moving pawn lands. Doubles keep the pair in the center for the next roll. Reduced-motion preferences skip the travel animation. Late-joining spectators see the current position without replaying previous rolls.
+One pair of dice rests at the lower center of the active player's base. Clicking the pair or Roll dice rolls and settles the faces inside that base, keeping the HOME triangles clear. The pair stays there while dice, bonuses, and doubles are played. At the end of the turn it travels to the next occupied player's base after the moving pawn lands. Reduced-motion preferences skip the animation. Late-joining spectators see the current base without replaying previous rolls.
+
+While lobby music plays, both dice float, rotate, and tumble through all six faces. They bounce off pieces, board edges, and each other. Impacts boost spin, which gradually slows to its cruising rate. Lobby collisions never change game-piece positions. Bases and paths fade through bright random colors, excluding black. Pausing music, muting, or starting a match ends these effects and restores normal board colors; reduced-motion preferences disable them.
 
 ## Victory Hall
 
-Open **🏆 Victory Hall** below the board at `/victory-hall`. It lists Player and Wins, highest first, with alphabetical ordering for ties. Human wins are grouped by nickname without case distinctions; computer players are counted separately and labelled. Each match awards one win. Browser disconnects, abandoned matches, and game resets do not clear the ranking. Use Refresh scores on an already-open hall page to see newer wins.
+Open **🏆 Victory Hall** below the board in its same-tab panel; the standalone `/victory-hall` address also remains available. Return links and Escape close the panel without disconnecting the player or opening another game. It lists Player and Wins, highest first, with alphabetical ordering for ties. Human wins are grouped by nickname without case distinctions; computer players are counted separately and labelled. Each match awards one win. Browser disconnects, abandoned matches, and game resets do not clear the ranking. Use Refresh scores to update only the hall panel.
 
 The updated Ubuntu installer configures `/run/pachisi-lan/victory-hall.json` as a RAM-backed checkpoint using systemd's preserved runtime directory. Scores survive service stops, restarts and game updates, and clear when the machine reboots. The runtime service owns this directory; application code remains read-only. A direct development launch without `PARCHEESI_HALL_FILE` keeps scores only in Python process memory, so restarting that process clears them.
 
