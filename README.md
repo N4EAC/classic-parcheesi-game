@@ -154,7 +154,7 @@ Open **http://localhost:8080**. Direct development launches keep Victory Hall on
 
 The [Ubuntu package workflow](https://github.com/N4EAC/classic-parcheesi-game/actions/workflows/debian-package.yml) builds the `.deb` on Ubuntu 24.04 amd64 and arm64, runs the game tests, and checks fresh installation, service startup, HTTP routes, upgrade, score retention, migration from the shell installer, removal, and purge. Package lifecycle tests are destructive and intended only for disposable test machines.
 
-To build locally on Ubuntu: `sudo apt install debhelper`, then `dpkg-buildpackage --build=binary --no-sign` in this repository. The `.deb` is written to the parent directory.
+To build locally on Ubuntu: `sudo apt install build-essential debhelper`, then `dpkg-buildpackage --build=binary --no-sign` in this repository. The `.deb` is written to the parent directory.
 
 With the Python environment above activated:
 
