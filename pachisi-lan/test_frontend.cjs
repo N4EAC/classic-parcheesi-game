@@ -141,22 +141,41 @@ vm.runInContext('state=null',sandbox);motion.matches=false;
  vm.runInContext(`jumps.clear();syncDice(null,{game:{started:true,turn:1,rolled:false,winner:null,dice:null},event:{id:30,kind:'start'}})`,sandbox);
  const dock=vm.runInContext('dicePose(3000)',sandbox),home=vm.runInContext('diceBase(1)',sandbox);assert.equal(dock.x,home.x);assert.equal(dock.y,home.y);
  vm.runInContext(`var diceBefore={game:{started:true,turn:1,rolled:false,winner:null},event:{id:30,kind:'start'}};var diceAfter={game:{started:true,turn:1,rolled:true,winner:null,dice:[3,4]},event:{id:31,kind:'roll',player:1,dice:[3,4]}};syncDice(diceBefore,diceAfter)`,sandbox);
- const flight=vm.runInContext('dicePose(3115)',sandbox);assert.equal(flight.mode,'jump');assert.ok(Math.abs(flight.y-((home.y+375)/2-65))<.001);
- const roll=vm.runInContext('dicePose(3230)',sandbox);assert.equal(roll.mode,'roll');assert.equal(roll.x,375);assert.equal(roll.y,375);
- const landed=vm.runInContext('dicePose(3610)',sandbox);assert.equal(landed.mode,'rest');assert.equal(landed.x,375);assert.equal(landed.values[0],3);
+ const firstRoll=vm.runInContext('dicePose(3115)',sandbox);assert.equal(firstRoll.mode,'roll');assert.equal(firstRoll.x,home.x);assert.equal(firstRoll.y,home.y);
+ const roll=vm.runInContext('dicePose(3230)',sandbox);assert.equal(roll.mode,'roll');assert.equal(roll.x,home.x);assert.equal(roll.y,home.y);
+ const landed=vm.runInContext('dicePose(3610)',sandbox);assert.equal(landed.mode,'rest');assert.equal(landed.x,home.x);assert.equal(landed.y,home.y);assert.equal(landed.values[0],3);
  now=3650;vm.runInContext(`var diceNext={game:{started:true,turn:2,rolled:false,winner:null},event:{id:32,kind:'move'}};syncDice(diceAfter,diceNext);state=diceNext;seat=2`,sandbox);
  assert.equal(vm.runInContext('canRoll()',sandbox),false,'Cannot roll again while dice are travelling');
  const nextBase=vm.runInContext('dicePose(3880)',sandbox),yellow=vm.runInContext('diceBase(2)',sandbox);assert.equal(nextBase.x,yellow.x);assert.equal(nextBase.y,yellow.y);assert.equal(vm.runInContext('canRoll()',sandbox),true);
  vm.runInContext('syncDice(diceNext,diceNext)',sandbox);assert.equal(vm.runInContext('diceTimeline.length',sandbox),0,'Repeated broadcasts do not replay travel');
  now=3900;vm.runInContext(`syncDice(diceNext,{game:{started:true,turn:2,rolled:false,winner:null},event:{id:33,kind:'roll',player:2,dice:[2,2]}})`,sandbox);
- assert.equal(vm.runInContext('dicePose(4510).x',sandbox),375,'Doubles keep dice at center');
+ assert.equal(vm.runInContext('dicePose(4510).x',sandbox),yellow.x,'Doubles keep dice in the active base');
  motion.matches=true;vm.runInContext(`syncDice(diceNext,{game:{started:true,turn:3,rolled:false,winner:null},event:{id:34,kind:'penalty',player:2,dice:[2,2]}})`,sandbox);assert.equal(vm.runInContext('diceTimeline.length',sandbox),0,'Reduced motion skips travel');
  vm.runInContext('syncDice(state,{game:{started:false}})',sandbox);assert.equal(vm.runInContext('diceTimeline.length',sandbox),0);
+ motion.matches=false;
+ for(let p=0;p<4;p++){
+  now=5000+p*1000;
+  vm.runInContext(`var baseStart={game:{started:true,turn:${p},winner:null,rolled:false,dice:null},event:{id:200,kind:'start'}};var baseRoll={game:{started:true,turn:${p},winner:null,rolled:true,dice:[3,4]},event:{id:201,kind:'roll',player:${p},dice:[3,4]}};syncDice(null,baseStart);syncDice(baseStart,baseRoll)`,sandbox);
+  const base=vm.runInContext(`diceBase(${p})`,sandbox);
+  for(let elapsed=0;elapsed<=500;elapsed+=20){const pose=vm.runInContext(`dicePose(${now+elapsed})`,sandbox);assert.equal(pose.x,base.x);assert.equal(pose.y,base.y)}
+  vm.runInContext('syncDice(null,baseRoll)',sandbox);assert.equal(vm.runInContext('diceRest.x',sandbox),base.x,'A refreshed roll stays in its own base');
+ }
  motion.matches=false;
  vm.runInContext(`state={game:{started:false}};ws={readyState:1};sound=true;musicWanted=true;lobbyMusic.paused=false;drawPathGlows(10000);drawPathGlows(10500)`,sandbox);
  assert.equal(musicSources.length,1,'Audio is routed once, avoiding duplicate playback');
  assert.equal(vm.runInContext('pathGlows.length',sandbox),8,'More random squares join each slow wave');
  assert.ok(vm.runInContext('musicEnvelope>0&&musicEnvelope<.625',sandbox),'Audio brightness changes smoothly');
+ const floatingStart=vm.runInContext('floatingDicePose(0,11000)',sandbox);
+ let floated=false;
+ for(let time=11000;time<70000;time+=100){
+  for(let die=0;die<2;die++){
+   const pose=vm.runInContext(`floatingDicePose(${die},${time})`,sandbox);
+   assert.ok(pose.x>=30&&pose.x<=720&&pose.y>=30&&pose.y<=720,'Lobby dice stay fully inside the board');
+   assert.ok(pose.value>=1&&pose.value<=6);
+   if(Math.hypot(pose.x-floatingStart.x,pose.y-floatingStart.y)>30)floated=true;
+  }
+ }
+ assert.ok(floated,'Lobby dice wander to random positions while music plays');
  vm.runInContext(`for(let t=11000;t<60000;t+=20)drawPathGlows(t)`,sandbox);
  assert.ok(vm.runInContext('pathGlows.length>=20&&pathGlows.length<=48&&new Set(pathGlows.map(g=>g.cell)).size===pathGlows.length',sandbox),'More random squares glow together without duplicates or lighting the whole board');
  assert.ok(vm.runInContext('pawnGlows.length>=4&&pawnGlows.length<=12&&new Set(pawnGlows.map(g=>g.pawn)).size===pawnGlows.length',sandbox),'Random pieces pulse without duplicate highlights');
@@ -169,9 +188,12 @@ vm.runInContext('state=null',sandbox);motion.matches=false;
   assert.equal(vm.runInContext('pathGlows.length',sandbox),0,`Clear highlights when ${condition}`);
   assert.equal(vm.runInContext('pawnGlows.length',sandbox),0,`Clear piece highlights when ${condition}`);
   assert.equal(vm.runInContext('pawnGlow(0,0,61500)',sandbox),0,`Pieces stay unlit when ${condition}`);
+  assert.equal(vm.runInContext('floatingDicePose(0,62000)',sandbox),null,`Floating stops when ${condition}`);
+  assert.equal(vm.runInContext('lobbyDiceFlights.length',sandbox),0);
  }
  vm.runInContext('lobbyMusic.readyState=4',sandbox);motion.matches=true;
  assert.equal(vm.runInContext('lobbyGlowActive()',sandbox),false,'Reduced motion disables lobby shimmer');
+ assert.equal(vm.runInContext('floatingDicePose(0,63000)',sandbox),null,'Reduced motion disables floating dice');
  vm.runInContext(`sound=true;seat=null;ws={readyState:1};
  function resultSnapshot(winner,id){return {game:{started:true,turn:1,winner,rolled:false,dice:null,remaining:[],message:'Result test',pieces:Array.from({length:4},(_,p)=>Array.from({length:4},()=>p===winner?71:-1))},seats:[{name:'Human',bot:false},{name:'Computer 2',bot:true},null,null],options:[],can_reset:winner!==null,event:{id,kind:winner===null?'start':'win',player:1}}}
  receiveState(resultSnapshot(1,100),true)`,sandbox);
@@ -196,7 +218,7 @@ vm.runInContext('state=null',sandbox);motion.matches=false;
  assert.equal(elements.victory.shown,restoredShown+2,'A computer can celebrate again in the next game');
  console.log('PASS: restored results stay silent, live computer wins celebrate once, reset remains enabled after dismissal, lobby can start another game.');
  console.log('PASS: random lobby path shimmer follows audio, routes music once, clears on pause/start/mute/hide/disconnect/buffering, respects reduced motion.');
- console.log('PASS: dice dock, jump arc, center roll and hold, next-player return, doubles, repeat broadcasts, reduced motion.');
+ console.log('PASS: rolls stay inside all four player bases, turn handoff, doubles, restored rolls, bounded random lobby floating, stop/mute/reduced motion.');
  console.log('PASS: music off by default, ordinary clicks stay silent, checkbox starts/stops music, no tap-anywhere prompt.');
  console.log('PASS: lobby music starts after interaction, continues while joining, stops at game start, resets, mutes, pauses when hidden/disconnected.');
  console.log('PASS: mobile legal move selector, selection preserved, selected move sent, waiting-turn controls, lobby cleanup.');

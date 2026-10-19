@@ -32,7 +32,7 @@ body{background:radial-gradient(ellipse at top,#273e45,#111e27 75%)}header{backg
 
 #lobbyAudio{margin-bottom:10px}#lobbyMusicLabel{display:inline-flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;color:#e6dbc1}#musicEnabled{width:16px;height:16px;margin:0;accent-color:#e7c575;cursor:pointer}#musicStatus{font-size:12px;margin:6px 0}
 #hallDialog{width:min(780px,calc(100vw - 24px));height:min(760px,calc(100dvh - 24px));box-sizing:border-box;padding:12px;border:1px solid #e7c57588;border-radius:16px;background:#14252d;color:#f4f1e7;box-shadow:0 24px 80px #0009}#hallDialog::backdrop{background:#07111bcc}#hallFrame{display:block;width:100%;height:calc(100% - 54px);border:0;background:#14252d}
-</style></head><body><header><h1>🎲 Classic Parcheesi Game</h1></header><main><section class="panel"><canvas aria-label="Parcheesi board with numbered pawns" id="board" width="750" height="750"></canvas><p class="help">Click the dice in your base, or use Roll dice, on your turn. The dice jump to the center to roll. Then choose a legal move from the right panel. Play each die in sequence; both can move the same piece when each landing is legal. Pieces travel counterclockwise and turn into their own HOME lanes. Two pieces of one color form a blockade.</p><nav class="rules-links" aria-label="Game rules"><a href="/rules/en" target="_blank" rel="noopener">English</a><a href="/rules/pt-BR" target="_blank" rel="noopener">Português (Brasil)</a><a href="/rules/es-ES" target="_blank" rel="noopener">Español (España)</a><a href="/rules/fr-FR" target="_blank" rel="noopener">Français (France)</a><a href="/rules/it-IT" target="_blank" rel="noopener" lang="it-IT">Italiano</a><a href="/rules/ru-RU" target="_blank" rel="noopener" lang="ru-RU">Русский</a><a href="/rules/ja-JP" target="_blank" rel="noopener" lang="ja-JP">日本語</a><a href="/rules/zh-CN" target="_blank" rel="noopener" lang="zh-CN">中文（简体）</a><a href="/rules/hi-IN" target="_blank" rel="noopener" lang="hi-IN">हिन्दी</a><a id="openHall" href="/victory-hall">🏆 Victory Hall</a></nav></section><aside class="panel"><div id="lobbyAudio"><label id="lobbyMusicLabel"><input id="musicEnabled" type="checkbox"> Lobby music</label><p id="musicStatus" class="help" role="status" hidden></p></div><div id="join"><h2>Join game</h2><input id="nickname" maxlength="20" placeholder="Nickname"><button id="joinBtn">Join game</button></div><h2>Players</h2><div id="seats"></div><div id="playControls" aria-label="Turn controls"><p id="status" role="status" aria-live="polite"></p><div id="dice">—</div><div id="moves"></div><button id="roll">Roll dice</button><div id="mobileChoices" hidden><select id="mobileMove" aria-label="Choose a legal move"></select><button id="mobileMoveBtn">Move piece</button></div></div><button id="start">Start with computers</button><button id="startHuman">Start humans only</button><button id="reset">⏹ Reset game</button><button id="sound">🔊 Sound on</button><p class="help">2–4 human players supported; optional computer opponents. The host runs on port 8080. Unoccupied colors are skipped in human-only games. Disconnected players are replaced by computers while other humans remain. The game resets when the last human leaves.</p></aside></main><audio id="lobbyTrack" src="/music2.mp3?v=2" loop preload="metadata"></audio><dialog id="victory" aria-labelledby="winnerName" aria-describedby="winnerMessage"><div id="fireworks" aria-hidden="true"></div><div class="victory-content"><div class="tada">TA-DA!</div><h2 id="winnerName"></h2><p id="winnerMessage">All four pieces are HOME. What a finish!</p><button id="dismissVictory" autofocus>Back to the board</button></div></dialog><dialog id="hallDialog" aria-label="Victory Hall"><button id="closeHall">← Back to game</button><iframe id="hallFrame" title="Victory Hall"></iframe></dialog><script>
+</style></head><body><header><h1>🎲 Classic Parcheesi Game</h1></header><main><section class="panel"><canvas aria-label="Parcheesi board with numbered pawns" id="board" width="750" height="750"></canvas><p class="help">Click the dice in your base, or use Roll dice, on your turn. The dice roll inside the active player’s base, then travel to the next player’s base. Choose a legal move from the right panel. Play each die in sequence; both can move the same piece when each landing is legal. Pieces travel counterclockwise and turn into their own HOME lanes. Two pieces of one color form a blockade.</p><nav class="rules-links" aria-label="Game rules"><a href="/rules/en" target="_blank" rel="noopener">English</a><a href="/rules/pt-BR" target="_blank" rel="noopener">Português (Brasil)</a><a href="/rules/es-ES" target="_blank" rel="noopener">Español (España)</a><a href="/rules/fr-FR" target="_blank" rel="noopener">Français (France)</a><a href="/rules/it-IT" target="_blank" rel="noopener" lang="it-IT">Italiano</a><a href="/rules/ru-RU" target="_blank" rel="noopener" lang="ru-RU">Русский</a><a href="/rules/ja-JP" target="_blank" rel="noopener" lang="ja-JP">日本語</a><a href="/rules/zh-CN" target="_blank" rel="noopener" lang="zh-CN">中文（简体）</a><a href="/rules/hi-IN" target="_blank" rel="noopener" lang="hi-IN">हिन्दी</a><a id="openHall" href="/victory-hall">🏆 Victory Hall</a></nav></section><aside class="panel"><div id="lobbyAudio"><label id="lobbyMusicLabel"><input id="musicEnabled" type="checkbox"> Lobby music</label><p id="musicStatus" class="help" role="status" hidden></p></div><div id="join"><h2>Join game</h2><input id="nickname" maxlength="20" placeholder="Nickname"><button id="joinBtn">Join game</button></div><h2>Players</h2><div id="seats"></div><div id="playControls" aria-label="Turn controls"><p id="status" role="status" aria-live="polite"></p><div id="dice">—</div><div id="moves"></div><button id="roll">Roll dice</button><div id="mobileChoices" hidden><select id="mobileMove" aria-label="Choose a legal move"></select><button id="mobileMoveBtn">Move piece</button></div></div><button id="start">Start with computers</button><button id="startHuman">Start humans only</button><button id="reset">⏹ Reset game</button><button id="sound">🔊 Sound on</button><p class="help">2–4 human players supported; optional computer opponents. The host runs on port 8080. Unoccupied colors are skipped in human-only games. Disconnected players are replaced by computers while other humans remain. The game resets when the last human leaves.</p></aside></main><audio id="lobbyTrack" src="/music2.mp3?v=2" loop preload="metadata"></audio><dialog id="victory" aria-labelledby="winnerName" aria-describedby="winnerMessage"><div id="fireworks" aria-hidden="true"></div><div class="victory-content"><div class="tada">TA-DA!</div><h2 id="winnerName"></h2><p id="winnerMessage">All four pieces are HOME. What a finish!</p><button id="dismissVictory" autofocus>Back to the board</button></div></dialog><dialog id="hallDialog" aria-label="Victory Hall"><button id="closeHall">← Back to game</button><iframe id="hallFrame" title="Victory Hall"></iframe></dialog><script>
 const $=id=>document.getElementById(id),canvas=$('board'),ctx=canvas.getContext('2d');let ws,seat=null,state=null,lastEvent=null,rolling=false,sound=true,audio=null;
 function closeHall(){$('hallDialog').close()}
 $('openHall').onclick=e=>{
@@ -148,8 +148,9 @@ const homeArrows=lanes.map(lane=>{
  return [[bx-uy*half,by+ux*half],[bx+uy*half,by-ux*half],[cx,cy]];
 });
 const bases=[P(3.5,14.5),P(3.5,3.5),P(14.5,14.5),P(14.5,3.5)];
-// One travelling pair: current base -> center roll -> next player's base.
+// Rolls stay in the active base; the pair travels only when the turn changes.
 const diceTimeline=[];
+const lobbyDiceFlights=[];
 let diceRest={x:bases[0][0],y:bases[0][1]+105,values:null};
 function diceBase(player){return {x:bases[player][0],y:bases[player][1]+105}}
 function dicePose(now){
@@ -168,19 +169,19 @@ function addDiceAction(to,duration,mode,values,notBefore=0){
  const now=performance.now();dicePose(now);
  const last=diceTimeline.at(-1),from=last?last.to:diceRest;
  const start=Math.max(now,last?last.end:now,notBefore);
- diceTimeline.push({from:{x:from.x,y:from.y},to,start,end:start+duration,mode,values});
+ diceTimeline.push({from:mode==='roll'?{...to}:{x:from.x,y:from.y},to,start,end:start+duration,mode,values});
 }
 function syncDice(previous,next){
  const g=next.game,now=performance.now();
  if(!g.started){diceTimeline.length=0;diceRest={...diceBase(seat??0),values:null};return}
  const freshEvent=next.event?.id!==previous?.event?.id;
- if(!previous?.game.started){diceTimeline.length=0;diceRest={...(g.rolled||g.winner!==null?{x:375,y:375}:diceBase(g.turn)),values:g.dice};return}
+ if(!previous?.game.started){diceTimeline.length=0;diceRest={...diceBase(g.turn),values:g.dice};return}
  if(freshEvent&&['roll','penalty'].includes(next.event?.kind)){
   const values=next.event.dice;
-  if(reducedMotion.matches){diceTimeline.length=0;diceRest={...(g.turn!==next.event.player?diceBase(g.turn):{x:375,y:375}),values};return}
-  addDiceAction({x:375,y:375},230,'jump',values);
-  addDiceAction({x:375,y:375},320,'roll',values);
-  addDiceAction({x:375,y:375},60,'hold',values);
+  if(reducedMotion.matches){diceTimeline.length=0;diceRest={...diceBase(g.turn),values};return}
+  const base=diceBase(next.event.player);
+  addDiceAction(base,320,'roll',values);
+  addDiceAction(base,60,'hold',values);
  }
  if(previous.game.turn!==g.turn&&g.winner===null){
   const values=diceTimeline.at(-1)?.values||diceRest.values;
@@ -189,7 +190,24 @@ function syncDice(previous,next){
   addDiceAction(diceBase(g.turn),230,'jump',values,lastPawnLanding);
  }
 }
+function floatingDicePose(index,now){
+ if(!lobbyGlowActive()){lobbyDiceFlights.length=0;return null}
+ let flight=lobbyDiceFlights[index];
+ if(!flight||now>=flight.end){
+  const base=diceBase(seat??0),from=flight?flight.to:{x:base.x+(index-.5)*58,y:base.y};
+  flight={from,to:{x:55+Math.random()*640,y:55+Math.random()*640},start:now,end:now+5000+Math.random()*3500,fromAngle:flight?.toAngle||0,toAngle:(Math.random()-.5)*.8,value:1+Math.floor(Math.random()*6)};
+  lobbyDiceFlights[index]=flight;
+ }
+ const t=Math.max(0,Math.min(1,(now-flight.start)/(flight.end-flight.start))),ease=t*t*(3-2*t);
+ return {x:flight.from.x+(flight.to.x-flight.from.x)*ease,y:flight.from.y+(flight.to.y-flight.from.y)*ease+Math.sin(t*Math.PI*2)*3,angle:flight.fromAngle+(flight.toAngle-flight.fromAngle)*ease,value:flight.value};
+}
 function drawDice(now){
+ if(lobbyGlowActive()){
+  rolling=false;
+  for(let i=0;i<2;i++){const pose=floatingDicePose(i,now);drawDie(pose.x,pose.y,pose.value,pose.angle)}
+  return;
+ }
+ lobbyDiceFlights.length=0;
  const pose=dicePose(now);rolling=pose.mode==='roll';
  const values=rolling?[1+Math.floor(Math.random()*6),1+Math.floor(Math.random()*6)]:pose.values||[null,null];
  values.forEach((value,i)=>drawDie(pose.x+(i-.5)*58,pose.y,value,pose.angle*(i?-1:1),pose.scale));
