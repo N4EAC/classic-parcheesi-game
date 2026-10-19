@@ -171,13 +171,30 @@ vm.runInContext('state=null',sandbox);motion.matches=false;
   for(let die=0;die<2;die++){
    const pose=vm.runInContext(`floatingDicePose(${die},${time})`,sandbox);
    assert.ok(pose.x>=30&&pose.x<=720&&pose.y>=30&&pose.y<=720,'Lobby dice stay fully inside the board');
-   assert.ok(pose.value>=1&&pose.value<=6);
-   lobbyFaces.add(pose.value);
+   const faces=vm.runInContext(`diceCubeGeometry(${pose.tumble},${pose.angle})`,sandbox);
+   for(const face of faces)lobbyFaces.add(face.value);
    if(Math.hypot(pose.x-floatingStart.x,pose.y-floatingStart.y)>30)floated=true;
   }
  }
  assert.ok(floated,'Lobby dice wander to random positions while music plays');
  assert.equal(lobbyFaces.size,6,'Tumbling shows all six faces');
+ let threeFacesVisible=false;
+ for(let angle=0;angle<40;angle+=.37){
+  const faces=vm.runInContext(`diceCubeGeometry(${angle},${angle*.43})`,sandbox);
+  assert.ok(faces.length>=1&&faces.length<=3,'Only camera-facing cube surfaces are rendered');
+  if(faces.length===3)threeFacesVisible=true;
+  for(const face of faces){
+   assert.equal(face.pips.length,face.value,'Each physical cube face has the correct pip count');
+   assert.ok(face.brightness>=.58&&face.brightness<=.98,'Cube lighting stays shaded and visible');
+   assert.ok(!faces.some(other=>other.value!==face.value&&other.value+face.value===7),'Opposite faces cannot face the camera together');
+   for(const point of [...face.corners,...face.pips.flat()])assert.ok(Number.isFinite(point[0])&&Number.isFinite(point[1])&&Math.hypot(...point)<30,'Projected geometry fits within the collision radius');
+   const cross=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
+   const sign=Math.sign(cross(...face.corners.slice(0,3)));
+   for(const pip of face.pips)for(const point of pip)for(let edge=0;edge<4;edge++)assert.ok(sign*cross(face.corners[edge],face.corners[(edge+1)%4],point)>=-1e-6,'Perspective pips stay on their own cube face');
+  }
+ }
+ assert.ok(threeFacesVisible,'The floating dice display three-dimensional depth');
+ console.log('PASS: perspective cube projection, three visible shaded faces, correct pips, opposite-face layout, collision bounds.');
  vm.runInContext(`state.game.pieces=Array.from({length:4},()=>[-1,-1,-1,-1]);
  var lobbyPiecesBefore=JSON.stringify(state.game.pieces);
  var hitPawn=xy(0,0,-1);

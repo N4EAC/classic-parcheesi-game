@@ -98,7 +98,7 @@ All nine translated rules pages include the credit: Music: “Signal To Noise”
 
 One pair of dice rests at the lower center of the active player's base. Clicking the pair or Roll dice rolls and settles the faces inside that base, keeping the HOME triangles clear. The pair stays there while dice, bonuses, and doubles are played. At the end of the turn it travels to the next occupied player's base after the moving pawn lands. Reduced-motion preferences skip the animation. Late-joining spectators see the current base without replaying previous rolls.
 
-While lobby music plays, both dice float, rotate, and tumble through all six faces. They bounce off pieces, board edges, and each other. Impacts boost spin, which gradually slows to its cruising rate. Lobby collisions never change game-piece positions. Bases and paths fade through bright random colors, excluding black. Pausing music, muting, or starting a match ends these effects and restores normal board colors; reduced-motion preferences disable them.
+While lobby music plays, both dice are shaded 3D cubes that float, rotate, and tumble through all six faces. Their faces and pips are projected in perspective, with correct opposite-face numbering and lighting. They bounce off pieces, board edges, and each other. Impacts boost spin, which gradually slows to its cruising rate. Lobby collisions never change game-piece positions. Bases and paths fade through bright random colors, excluding black. Pausing music, muting, or starting a match ends these effects and restores normal board colors; reduced-motion preferences disable them.
 
 ## Victory Hall
 

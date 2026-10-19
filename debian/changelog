@@ -1,3 +1,11 @@
+classic-parcheesi-game (1.0.8) unstable; urgency=medium
+
+  * Render floating lobby dice as perspective 3D cubes with shaded faces.
+  * Project pips on each rotating face with correct opposite-face numbering.
+  * Preserve collision bounds, spin dynamics and normal in-game base rolls.
+
+ -- N4EAC <21286567+N4EAC@users.noreply.github.com>  Mon, 19 Oct 2026 14:00:00 -0400
+
 classic-parcheesi-game (1.0.7) unstable; urgency=medium
 
   * Roll the dice inside the active player base instead of the HOME center.
