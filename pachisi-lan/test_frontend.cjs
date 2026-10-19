@@ -1,6 +1,6 @@
 // Run with Node.js: node test_frontend.cjs (no npm packages required).
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const handlers={},elements={},oscillators=[],contexts=[],buffers=[],musicSources=[],gains=[];let gesture=false,tick,now=400;
+const handlers={},windowHandlers={},elements={},oscillators=[],contexts=[],buffers=[],musicSources=[],gains=[];let gesture=false,tick,now=400;
 function element(){return {open:false,attributes:{},style:{setProperty(){}},children:[],setAttribute(key,value){this.attributes[key]=value},replaceChildren(){this.children=[]},appendChild(child){this.children.push(child)},showModal(){this.open=true;this.shown=(this.shown||0)+1},close(){this.open=false}}}
 const ctx=new Proxy({createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})}, {get:(o,k)=>k in o?o[k]:()=>{}});
 elements.board={getContext:()=>ctx};
@@ -22,7 +22,7 @@ class LobbyAudio{
  addEventListener(){}
 }
 const motion={matches:false,addEventListener(){}};
-const sandbox=vm.createContext({console,document:{body:element(),hidden:false,getElementById:id=>elements[id]||(elements[id]=id==='lobbyTrack'?new LobbyAudio('/music2.mp3?v=2'):element()),createElement:tag=>tag==='canvas'?{getContext:()=>ctx}:element(),addEventListener:(type,fn)=>handlers[type]=fn},fetch:async()=>({ok:true,arrayBuffer:async()=>new ArrayBuffer(4)}),window:{Audio:LobbyAudio,AudioContext,matchMedia:()=>motion,addEventListener(){}},performance:{now:()=>now},location:{protocol:'http:',host:'localhost'},WebSocket:class{},setTimeout(){},setInterval(fn,ms){if(ms===20)tick=fn},clearInterval(){}});
+const sandbox=vm.createContext({console,document:{body:element(),hidden:false,getElementById:id=>elements[id]||(elements[id]=id==='lobbyTrack'?new LobbyAudio('/music2.mp3?v=2'):element()),createElement:tag=>tag==='canvas'?{getContext:()=>ctx}:element(),addEventListener:(type,fn)=>handlers[type]=fn},fetch:async()=>({ok:true,arrayBuffer:async()=>new ArrayBuffer(4)}),window:{Audio:LobbyAudio,AudioContext,matchMedia:()=>motion,addEventListener:(type,fn)=>windowHandlers[type]=fn},performance:{now:()=>now},location:{protocol:'http:',host:'localhost',origin:'http://localhost'},WebSocket:class{},setTimeout(){},setInterval(fn,ms){if(ms===20)tick=fn},clearInterval(){}});
 const source=fs.readFileSync(__dirname+'/index.html','utf8').split('<script>')[1].split('</script>')[0];
 vm.runInContext(source,sandbox);
 vm.runInContext(`homeArrows.forEach((points,p)=>{
@@ -58,6 +58,21 @@ for(let player=0;player<4;player++)for(let mask=1;mask<16;mask++){
 vm.runInContext('state=null',sandbox);motion.matches=false;
 (async()=>{
  assert.equal(contexts.length,0,'No blocked audio context created during page load');
+ const hallLink=fs.readFileSync(__dirname+'/index.html','utf8').match(/<a id="openHall"[^>]*>/)[0];
+ assert.doesNotMatch(hallLink,/target=/,'Victory Hall defaults to the current tab');
+ const existingSocket=vm.runInContext('ws',sandbox);let hallPrevented=false;
+ elements.hallFrame=Object.assign(element(),{contentWindow:{}});
+ elements.openHall.onclick({button:0,preventDefault(){hallPrevented=true}});
+ assert.ok(hallPrevented);assert.equal(elements.hallDialog.open,true);assert.equal(elements.hallFrame.src,'/victory-hall?embedded=1');
+ assert.equal(vm.runInContext('ws',sandbox),existingSocket,'Opening the hall preserves the game connection');
+ windowHandlers.message({origin:'https://unrelated.example',source:elements.hallFrame.contentWindow,data:'close-victory-hall'});
+ assert.equal(elements.hallDialog.open,true,'Unrelated origins cannot control the hall');
+ windowHandlers.message({origin:'http://localhost',source:{},data:'close-victory-hall'});
+ assert.equal(elements.hallDialog.open,true,'Unrelated frames cannot close the hall');
+ windowHandlers.message({origin:'http://localhost',source:elements.hallFrame.contentWindow,data:'close-victory-hall'});
+ assert.equal(elements.hallDialog.open,false,'The hall return link closes the panel without loading another game');
+ elements.openHall.onclick({button:0,preventDefault(){}});elements.closeHall.onclick();assert.equal(elements.hallDialog.open,false);
+ console.log('PASS: Victory Hall opens in the same tab, keeps the game connection, and returns without another game page.');
  assert.match(fs.readFileSync(__dirname+'/index.html','utf8'),/id="musicEnabled" type="checkbox">/);
  vm.runInContext('state={game:{started:false}};ws={readyState:1};syncLobbyMusic()',sandbox);await new Promise(resolve=>setImmediate(resolve));
  assert.equal(vm.runInContext('lobbyMusic.paused',sandbox),true,'Lobby stays silent before opting in');

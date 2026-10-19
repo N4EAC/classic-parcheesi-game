@@ -105,6 +105,17 @@ class Network(unittest.IsolatedAsyncioTestCase):
             self.assertIn('<th scope="col">Player</th>',html);self.assertIn('<th scope="col">Wins</th>',html);self.assertNotIn('Alice <script>',html)
         s.reset_game();self.assertEqual(s.hall_rows()[0]['wins'],2)
         s.game.update(started=True);s.reset_if_abandoned();self.assertEqual(s.hall_rows()[0]['wins'],2)
+    async def test_embedded_hall_keeps_active_player(self):
+        human=await self.join('Hall visitor')
+        await human.send_json({'action':'start','with_bots':True});await self.state(human)
+        async with self.client.get(self.server.make_url('/victory-hall?embedded=1')) as r:
+            self.assertEqual(r.status,200);html=await r.text()
+            self.assertIn("parent.postMessage('close-victory-hall',location.origin)",html)
+        async with self.client.get(self.server.make_url('/victory-hall')) as r:
+            self.assertNotIn('postMessage',await r.text())
+        self.assertTrue(s.game['started']);self.assertTrue(s.human_present());self.assertFalse(s.seats[0]['bot'])
+        self.assertEqual(len(s.clients),1)
+        await human.close()
     async def test_pages(self):
         for path in ['/','/rules/en','/rules/pt-BR','/rules/es-ES','/rules/fr-FR','/rules/it-IT','/rules/ru-RU','/rules/ja-JP','/rules/zh-CN','/rules/hi-IN']:
             async with self.client.get(self.server.make_url(path)) as r:self.assertEqual(r.status,200);body=await r.text();self.assertIn('<html',body)

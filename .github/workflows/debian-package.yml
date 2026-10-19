@@ -26,11 +26,11 @@ jobs:
       - name: Build Debian package
         run: dpkg-buildpackage --build=binary --no-sign
       - name: Test installation, upgrade, migration and removal
-        run: sudo bash packaging/test-install.sh ../classic-parcheesi-game_1.0.5_all.deb
+        run: sudo bash packaging/test-install.sh ../classic-parcheesi-game_1.0.6_all.deb
       - name: Stage validated package
         run: |
           mkdir -p dist
-          cp ../classic-parcheesi-game_1.0.5_all.deb dist/
+          cp ../classic-parcheesi-game_1.0.6_all.deb dist/
       - uses: actions/upload-artifact@v4
         with:
           name: deb-${{ matrix.runner }}

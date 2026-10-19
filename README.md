@@ -27,15 +27,15 @@ Supports **Ubuntu 24.04 LTS** on Intel/AMD (`amd64`) and ARM64 (`arm64`). The ar
 ```bash
 sudo apt update
 sudo apt install -y curl
-curl -fLO https://github.com/N4EAC/classic-parcheesi-game/releases/latest/download/classic-parcheesi-game_1.0.5_all.deb
-curl -fLO https://github.com/N4EAC/classic-parcheesi-game/releases/latest/download/classic-parcheesi-game_1.0.5_all.deb.sha256
-sha256sum -c classic-parcheesi-game_1.0.5_all.deb.sha256
-sudo apt install ./classic-parcheesi-game_1.0.5_all.deb
+curl -fLO https://github.com/N4EAC/classic-parcheesi-game/releases/latest/download/classic-parcheesi-game_1.0.6_all.deb
+curl -fLO https://github.com/N4EAC/classic-parcheesi-game/releases/latest/download/classic-parcheesi-game_1.0.6_all.deb.sha256
+sha256sum -c classic-parcheesi-game_1.0.6_all.deb.sha256
+sudo apt install ./classic-parcheesi-game_1.0.6_all.deb
 ```
 
 Open **http://SERVER_IP:8080/** from devices on the same network (`hostname -I` shows the server address). If UFW is enabled, allow your LAN subnet, for example `sudo ufw allow from 10.0.0.0/24 to any port 8080 proto tcp`; replace that subnet with your own. The `.deb` does not change firewall rules.
 
-To transfer the downloaded package over SSH instead, run `scp classic-parcheesi-game_1.0.5_all.deb USER@SERVER_IP:~/`, connect with `ssh USER@SERVER_IP`, and run `sudo apt install ./classic-parcheesi-game_1.0.5_all.deb` there.
+To transfer the downloaded package over SSH instead, run `scp classic-parcheesi-game_1.0.6_all.deb USER@SERVER_IP:~/`, connect with `ssh USER@SERVER_IP`, and run `sudo apt install ./classic-parcheesi-game_1.0.6_all.deb` there.
 
 The package installs files in `/usr/share/classic-parcheesi-game`. Installing it over the original shell installation migrates the standard service, saves its unit as `/etc/systemd/system/pachisi-lan.service.shell-installer-backup`, and leaves `/opt/pachisi-lan` available for recovery. Custom service overrides must be moved aside manually. Installation and upgrades end the current match; Victory Hall scores survive service restarts until reboot. Use APT for subsequent upgrades; do not rerun the old shell installer over the package.
 
@@ -134,7 +134,7 @@ Ubuntu needs an SSH server for this method. If necessary, run `sudo apt install 
 1. Join with a nickname. Two or more humans can play, or fill open seats with computers.
 2. The highest opening dice total starts.
 3. Click the dice in your base or **Roll dice**. Choose a legal move; on mobile use the move selector and **Move piece**.
-4. Bring all four pieces HOME to win. Open **Victory Hall** below the board to see the leaderboard.
+4. Bring all four pieces HOME to win. Open **Victory Hall** below the board to see the leaderboard in the same tab. Use **← Classic Parcheesi**, **Back to game**, or Escape to return; your player stays connected to the same match.
 
 After a win, **Reset game** returns to the lobby so you can start again. Anyone viewing a finished match can reset it; spectators cannot reset an active match with human players. Refreshing or reconnecting to a finished match does not replay its victory banner or sound.
 

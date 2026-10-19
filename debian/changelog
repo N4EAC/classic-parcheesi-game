@@ -1,3 +1,11 @@
+classic-parcheesi-game (1.0.6) unstable; urgency=medium
+
+  * Open Victory Hall in a same-tab panel while retaining the game connection.
+  * Return to the active board without creating or loading another game page.
+  * Verify embedded navigation and player connection retention.
+
+ -- N4EAC <21286567+N4EAC@users.noreply.github.com>  Mon, 19 Oct 2026 13:00:00 -0400
+
 classic-parcheesi-game (1.0.5) unstable; urgency=medium
 
   * Suppress historical victory celebrations on page load and reconnect.
