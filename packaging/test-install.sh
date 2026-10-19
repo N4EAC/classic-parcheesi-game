@@ -18,7 +18,13 @@ check_game() {
 check_hall() {
     curl -fsS http://127.0.0.1:8080/victory-hall | grep -q PackageTestWinner
 }
-apt-get install -y "$package"
+# An older version fixture exercises an actual APT version upgrade, followed
+# by reinstallation of the same version.
+fixture=$(mktemp -d)
+dpkg-deb -R "$package" "$fixture/old"
+sed -i 's/^Version: .*/Version: 1.0.0/' "$fixture/old/DEBIAN/control"
+dpkg-deb --root-owner-group -b "$fixture/old" "$fixture/old.deb"
+apt-get install -y "$fixture/old.deb"
 check_game
 systemctl stop pachisi-lan
 printf '%s\n' '[{"name":"PackageTestWinner","wins":5,"bot":false}]' > /run/pachisi-lan/victory-hall.json
@@ -26,7 +32,10 @@ chown pachisi:pachisi /run/pachisi-lan/victory-hall.json
 systemctl start pachisi-lan
 check_game
 check_hall
-# Reinstall exercises the generated upgrade scripts and restart behavior.
+apt-get install -y "$package"
+check_game
+check_hall
+# Reinstall also exercises recovery at the same package version.
 dpkg -i "$package"
 check_game
 check_hall
@@ -34,6 +43,14 @@ apt-get remove -y classic-parcheesi-game
 ! systemctl is-active --quiet pachisi-lan
 test ! -f /usr/share/classic-parcheesi-game/server.py
 apt-get purge -y classic-parcheesi-game
+# Confirm a custom unit is rejected and preserved, rather than overwritten.
+printf '%s\n' '# Custom service must survive' > /etc/systemd/system/pachisi-lan.service
+if apt-get install -y "$package"; then
+    echo 'Custom service was not protected' >&2
+    exit 1
+fi
+grep -qx '# Custom service must survive' /etc/systemd/system/pachisi-lan.service
+rm /etc/systemd/system/pachisi-lan.service
 # Recreate the shell installer's service and test automatic migration.
 cat > /etc/systemd/system/pachisi-lan.service <<'UNIT'
 [Unit]
@@ -52,4 +69,5 @@ check_game
 check_hall
 apt-get purge -y classic-parcheesi-game
 ! systemctl is-active --quiet pachisi-lan
+rm -rf "$fixture"
 echo 'Package installation, upgrade, score retention, migration, and removal passed.'
