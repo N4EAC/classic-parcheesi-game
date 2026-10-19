@@ -11,7 +11,7 @@ A classic Parcheesi board game for **2–4 players on the same network**, with o
 - Human-only games or computer opponents for open seats.
 - Fixed mobile turn controls: roll and move without scrolling below the board.
 - Optional lobby music, game sounds, and a winner celebration with fireworks.
-- While lobby music plays, random path squares gently shimmer with its audio level; reduced-motion settings keep the paths still.
+- While lobby music plays, random path squares and pieces glow with its audio level; all flashing stops when the game starts, and reduced-motion settings disable it.
 - Victory Hall ranked by wins. Ubuntu installations keep scores in RAM across game resets and service restarts; rebooting the machine clears them.
 - Rules in English, Brazilian Portuguese, Spanish, French, Italian, Russian, Japanese, Simplified Chinese, and Hindi.
 - Automatic return to the lobby when the last human disconnects.

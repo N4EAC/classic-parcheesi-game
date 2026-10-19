@@ -111,13 +111,20 @@ vm.runInContext(`homeArrows.forEach((points,p)=>{
  motion.matches=false;
  vm.runInContext(`state={game:{started:false}};ws={readyState:1};sound=true;musicWanted=true;lobbyMusic.paused=false;drawPathGlows(10000);drawPathGlows(10500)`,sandbox);
  assert.equal(musicSources.length,1,'Audio is routed once, avoiding duplicate playback');
- assert.equal(vm.runInContext('pathGlows.length',sandbox),6,'Several random squares join each slow wave');
+ assert.equal(vm.runInContext('pathGlows.length',sandbox),8,'More random squares join each slow wave');
  assert.ok(vm.runInContext('musicEnvelope>0&&musicEnvelope<.625',sandbox),'Audio brightness changes smoothly');
  vm.runInContext(`for(let t=11000;t<60000;t+=20)drawPathGlows(t)`,sandbox);
- assert.ok(vm.runInContext('pathGlows.length>=12&&pathGlows.length<=32&&new Set(pathGlows.map(g=>g.cell)).size===pathGlows.length',sandbox),'More random squares glow together without duplicates or lighting the whole board');
+ assert.ok(vm.runInContext('pathGlows.length>=20&&pathGlows.length<=48&&new Set(pathGlows.map(g=>g.cell)).size===pathGlows.length',sandbox),'More random squares glow together without duplicates or lighting the whole board');
+ assert.ok(vm.runInContext('pawnGlows.length>=4&&pawnGlows.length<=12&&new Set(pawnGlows.map(g=>g.pawn)).size===pawnGlows.length',sandbox),'Random pieces pulse without duplicate highlights');
+ vm.runInContext('pawnGlows.length=0;pawnGlows.push({pawn:0,start:60000,duration:3000})',sandbox);
+ assert.equal(vm.runInContext('pawnGlow(0,0,60000)',sandbox),0);
+ assert.ok(vm.runInContext('pawnGlow(0,0,61500)',sandbox)>.33,'Pieces brighten gradually with the music');
+ assert.equal(vm.runInContext('pawnGlow(0,0,63000)',sandbox),0,'Piece pulse fades completely');
  for(const condition of ['lobbyMusic.paused=true','state.game.started=true','musicWanted=false','sound=false','document.hidden=true','ws.readyState=3','lobbyMusic.readyState=1']){
   vm.runInContext(`state.game.started=false;musicWanted=true;sound=true;document.hidden=false;ws.readyState=1;lobbyMusic.paused=false;lobbyMusic.readyState=4;drawPathGlows(61000);${condition};drawPathGlows(62000)`,sandbox);
   assert.equal(vm.runInContext('pathGlows.length',sandbox),0,`Clear highlights when ${condition}`);
+  assert.equal(vm.runInContext('pawnGlows.length',sandbox),0,`Clear piece highlights when ${condition}`);
+  assert.equal(vm.runInContext('pawnGlow(0,0,61500)',sandbox),0,`Pieces stay unlit when ${condition}`);
  }
  vm.runInContext('lobbyMusic.readyState=4',sandbox);motion.matches=true;
  assert.equal(vm.runInContext('lobbyGlowActive()',sandbox),false,'Reduced motion disables lobby shimmer');
