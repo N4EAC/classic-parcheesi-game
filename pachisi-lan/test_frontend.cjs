@@ -166,16 +166,35 @@ vm.runInContext('state=null',sandbox);motion.matches=false;
  assert.equal(vm.runInContext('pathGlows.length',sandbox),8,'More random squares join each slow wave');
  assert.ok(vm.runInContext('musicEnvelope>0&&musicEnvelope<.625',sandbox),'Audio brightness changes smoothly');
  const floatingStart=vm.runInContext('floatingDicePose(0,11000)',sandbox);
- let floated=false;
+ let floated=false;const lobbyFaces=new Set();
  for(let time=11000;time<70000;time+=100){
   for(let die=0;die<2;die++){
    const pose=vm.runInContext(`floatingDicePose(${die},${time})`,sandbox);
    assert.ok(pose.x>=30&&pose.x<=720&&pose.y>=30&&pose.y<=720,'Lobby dice stay fully inside the board');
    assert.ok(pose.value>=1&&pose.value<=6);
+   lobbyFaces.add(pose.value);
    if(Math.hypot(pose.x-floatingStart.x,pose.y-floatingStart.y)>30)floated=true;
   }
  }
  assert.ok(floated,'Lobby dice wander to random positions while music plays');
+ assert.equal(lobbyFaces.size,6,'Tumbling shows all six faces');
+ vm.runInContext(`state.game.pieces=Array.from({length:4},()=>[-1,-1,-1,-1]);
+ var lobbyPiecesBefore=JSON.stringify(state.game.pieces);
+ var hitPawn=xy(0,0,-1);
+ Object.assign(lobbyDiceBodies[0],{x:hitPawn[0]-46,y:hitPawn[1],vx:70,vy:0,spin:.6,cruiseSpin:.6,nextSteer:Infinity});
+ Object.assign(lobbyDiceBodies[1],{x:650,y:375,vx:0,vy:0,nextSteer:Infinity});lobbyDiceTime=89984;updateLobbyDice(90000)`,sandbox);
+ assert.ok(vm.runInContext('lobbyDiceBodies[0].vx<0&&lobbyDiceBodies[0].spin>3',sandbox),'Hitting a piece bounces the die and boosts spin');
+ assert.ok(vm.runInContext('Math.hypot(lobbyDiceBodies[0].x-hitPawn[0],lobbyDiceBodies[0].y-hitPawn[1])>=47',sandbox),'Dice separate from pieces');
+ vm.runInContext(`Object.assign(lobbyDiceBodies[0],{x:300,y:375,vx:70,vy:0,spin:.6});Object.assign(lobbyDiceBodies[1],{x:358,y:375,vx:-70,vy:0,spin:.6});lobbyDiceTime=90984;updateLobbyDice(91000)`,sandbox);
+ assert.ok(vm.runInContext('lobbyDiceBodies[0].vx<0&&lobbyDiceBodies[1].vx>0&&lobbyDiceBodies.every(b=>b.spin>3)',sandbox),'Dice collide with one another and both spin faster');
+ vm.runInContext(`Object.assign(lobbyDiceBodies[0],{x:47.9,y:375,vx:-70,vy:0,spin:.6});Object.assign(lobbyDiceBodies[1],{x:650,y:375,vx:0,vy:0});lobbyDiceTime=91984;updateLobbyDice(92000)`,sandbox);
+ assert.ok(vm.runInContext('lobbyDiceBodies[0].x>=48&&lobbyDiceBodies[0].vx>0',sandbox),'Dice bounce off the board edge');
+ vm.runInContext(`Object.assign(lobbyDiceBodies[0],{x:300,y:375,vx:0,vy:0,speed:0,spin:9,cruiseSpin:.6});Object.assign(lobbyDiceBodies[1],{x:650,y:375,vx:0,vy:0,speed:0});lobbyDiceTime=93000;for(let t=93000;t<98000;t+=50)updateLobbyDice(t)`,sandbox);
+ assert.ok(vm.runInContext('lobbyDiceBodies[0].spin>.6&&lobbyDiceBodies[0].spin<1.5',sandbox),'Collision spin slows smoothly back to its cruising rate');
+ assert.equal(vm.runInContext('JSON.stringify(state.game.pieces)',sandbox),vm.runInContext('lobbyPiecesBefore',sandbox),'Lobby collisions do not move actual game pieces');
+ vm.runInContext('lobbyTints[0]={from:0,to:120,start:0,end:10000}',sandbox);
+ assert.equal(vm.runInContext('lobbyTint(0,5000,52)',sandbox),'hsl(60,64%,52%)','Base and path colors fade gradually');
+ for(let tint=0;tint<72;tint++)assert.match(vm.runInContext(`lobbyTint(${tint},5500,52)`,sandbox),/^hsl\([\d.]+,64%,52%\)$/,'All lobby colors retain a bright lightness floor');
  vm.runInContext(`for(let t=11000;t<60000;t+=20)drawPathGlows(t)`,sandbox);
  assert.ok(vm.runInContext('pathGlows.length>=20&&pathGlows.length<=48&&new Set(pathGlows.map(g=>g.cell)).size===pathGlows.length',sandbox),'More random squares glow together without duplicates or lighting the whole board');
  assert.ok(vm.runInContext('pawnGlows.length>=4&&pawnGlows.length<=12&&new Set(pawnGlows.map(g=>g.pawn)).size===pawnGlows.length',sandbox),'Random pieces pulse without duplicate highlights');
@@ -189,11 +208,13 @@ vm.runInContext('state=null',sandbox);motion.matches=false;
   assert.equal(vm.runInContext('pawnGlows.length',sandbox),0,`Clear piece highlights when ${condition}`);
   assert.equal(vm.runInContext('pawnGlow(0,0,61500)',sandbox),0,`Pieces stay unlit when ${condition}`);
   assert.equal(vm.runInContext('floatingDicePose(0,62000)',sandbox),null,`Floating stops when ${condition}`);
-  assert.equal(vm.runInContext('lobbyDiceFlights.length',sandbox),0);
+  assert.equal(vm.runInContext('lobbyDiceBodies.length',sandbox),0);
+  assert.equal(vm.runInContext('lobbyTint(0,62000,52)',sandbox),null,`Normal board colors return when ${condition}`);
  }
  vm.runInContext('lobbyMusic.readyState=4',sandbox);motion.matches=true;
  assert.equal(vm.runInContext('lobbyGlowActive()',sandbox),false,'Reduced motion disables lobby shimmer');
  assert.equal(vm.runInContext('floatingDicePose(0,63000)',sandbox),null,'Reduced motion disables floating dice');
+ assert.equal(vm.runInContext('lobbyTint(0,63000,52)',sandbox),null,'Reduced motion disables color cycling');
  vm.runInContext(`sound=true;seat=null;ws={readyState:1};
  function resultSnapshot(winner,id){return {game:{started:true,turn:1,winner,rolled:false,dice:null,remaining:[],message:'Result test',pieces:Array.from({length:4},(_,p)=>Array.from({length:4},()=>p===winner?71:-1))},seats:[{name:'Human',bot:false},{name:'Computer 2',bot:true},null,null],options:[],can_reset:winner!==null,event:{id,kind:winner===null?'start':'win',player:1}}}
  receiveState(resultSnapshot(1,100),true)`,sandbox);
@@ -218,6 +239,7 @@ vm.runInContext('state=null',sandbox);motion.matches=false;
  assert.equal(elements.victory.shown,restoredShown+2,'A computer can celebrate again in the next game');
  console.log('PASS: restored results stay silent, live computer wins celebrate once, reset remains enabled after dismissal, lobby can start another game.');
  console.log('PASS: random lobby path shimmer follows audio, routes music once, clears on pause/start/mute/hide/disconnect/buffering, respects reduced motion.');
+ console.log('PASS: piece/dice/wall collisions, spin boost and damping, all six tumbling faces, colorful fades, unchanged game pieces and restored game colors.');
  console.log('PASS: rolls stay inside all four player bases, turn handoff, doubles, restored rolls, bounded random lobby floating, stop/mute/reduced motion.');
  console.log('PASS: music off by default, ordinary clicks stay silent, checkbox starts/stops music, no tap-anywhere prompt.');
  console.log('PASS: lobby music starts after interaction, continues while joining, stops at game start, resets, mutes, pauses when hidden/disconnected.');
