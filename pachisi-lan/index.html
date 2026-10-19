@@ -242,8 +242,12 @@ function drawPathGlows(now){
  musicEnvelope+=(energy-musicEnvelope)*.08;
  if(now>=nextPathGlow){
   const available=glowCells.map((_,i)=>i).filter(i=>!pathGlows.some(glow=>glow.cell===i));
-  if(available.length)pathGlows.push({cell:available[Math.floor(Math.random()*available.length)],start:now,duration:2600+Math.random()*1800});
-  nextPathGlow=now+350+Math.random()*300;
+  const count=Math.min(3,available.length,32-pathGlows.length);
+  for(let i=0;i<count;i++){
+   const cell=available.splice(Math.floor(Math.random()*available.length),1)[0];
+   pathGlows.push({cell,start:now,duration:2600+Math.random()*1800});
+  }
+  nextPathGlow=now+280+Math.random()*200;
  }
  for(let i=pathGlows.length-1;i>=0;i--){
   const glow=pathGlows[i],phase=(now-glow.start)/glow.duration;

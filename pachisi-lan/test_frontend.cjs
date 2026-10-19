@@ -111,17 +111,17 @@ vm.runInContext(`homeArrows.forEach((points,p)=>{
  motion.matches=false;
  vm.runInContext(`state={game:{started:false}};ws={readyState:1};sound=true;musicWanted=true;lobbyMusic.paused=false;drawPathGlows(10000);drawPathGlows(10500)`,sandbox);
  assert.equal(musicSources.length,1,'Audio is routed once, avoiding duplicate playback');
- assert.ok(vm.runInContext('pathGlows.length>=1&&pathGlows.length<=2',sandbox),'A few slowly staggered squares glow');
+ assert.equal(vm.runInContext('pathGlows.length',sandbox),6,'Several random squares join each slow wave');
  assert.ok(vm.runInContext('musicEnvelope>0&&musicEnvelope<.625',sandbox),'Audio brightness changes smoothly');
  vm.runInContext(`for(let t=11000;t<60000;t+=20)drawPathGlows(t)`,sandbox);
- assert.ok(vm.runInContext('pathGlows.length<=13&&new Set(pathGlows.map(g=>g.cell)).size===pathGlows.length',sandbox),'Random highlights stay sparse and distinct');
+ assert.ok(vm.runInContext('pathGlows.length>=12&&pathGlows.length<=32&&new Set(pathGlows.map(g=>g.cell)).size===pathGlows.length',sandbox),'More random squares glow together without duplicates or lighting the whole board');
  for(const condition of ['lobbyMusic.paused=true','state.game.started=true','musicWanted=false','sound=false','document.hidden=true','ws.readyState=3','lobbyMusic.readyState=1']){
   vm.runInContext(`state.game.started=false;musicWanted=true;sound=true;document.hidden=false;ws.readyState=1;lobbyMusic.paused=false;lobbyMusic.readyState=4;drawPathGlows(61000);${condition};drawPathGlows(62000)`,sandbox);
   assert.equal(vm.runInContext('pathGlows.length',sandbox),0,`Clear highlights when ${condition}`);
  }
  vm.runInContext('lobbyMusic.readyState=4',sandbox);motion.matches=true;
  assert.equal(vm.runInContext('lobbyGlowActive()',sandbox),false,'Reduced motion disables lobby shimmer');
- console.log('PASS: sparse lobby path shimmer follows audio, routes music once, clears on pause/start/mute/hide/disconnect/buffering, respects reduced motion.');
+ console.log('PASS: random lobby path shimmer follows audio, routes music once, clears on pause/start/mute/hide/disconnect/buffering, respects reduced motion.');
  console.log('PASS: dice dock, jump arc, center roll and hold, next-player return, doubles, repeat broadcasts, reduced motion.');
  console.log('PASS: music off by default, ordinary clicks stay silent, checkbox starts/stops music, no tap-anywhere prompt.');
  console.log('PASS: lobby music starts after interaction, continues while joining, stops at game start, resets, mutes, pauses when hidden/disconnected.');
