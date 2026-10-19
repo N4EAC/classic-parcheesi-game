@@ -34,6 +34,7 @@ body{background:radial-gradient(ellipse at top,#273e45,#111e27 75%)}header{backg
 </style></head><body><header><h1>🎲 Classic Parcheesi Game</h1></header><main><section class="panel"><canvas aria-label="Parcheesi board with numbered pawns" id="board" width="750" height="750"></canvas><p class="help">Click the dice in your base, or use Roll dice, on your turn. The dice jump to the center to roll. Then choose a legal move from the right panel. Play each die in sequence; both can move the same piece when each landing is legal. Pieces travel counterclockwise and turn into their own HOME lanes. Two pieces of one color form a blockade.</p><nav class="rules-links" aria-label="Game rules"><a href="/rules/en" target="_blank" rel="noopener">English</a><a href="/rules/pt-BR" target="_blank" rel="noopener">Português (Brasil)</a><a href="/rules/es-ES" target="_blank" rel="noopener">Español (España)</a><a href="/rules/fr-FR" target="_blank" rel="noopener">Français (France)</a><a href="/rules/it-IT" target="_blank" rel="noopener" lang="it-IT">Italiano</a><a href="/rules/ru-RU" target="_blank" rel="noopener" lang="ru-RU">Русский</a><a href="/rules/ja-JP" target="_blank" rel="noopener" lang="ja-JP">日本語</a><a href="/rules/zh-CN" target="_blank" rel="noopener" lang="zh-CN">中文（简体）</a><a href="/rules/hi-IN" target="_blank" rel="noopener" lang="hi-IN">हिन्दी</a><a href="/victory-hall" target="_blank" rel="noopener">🏆 Victory Hall</a></nav></section><aside class="panel"><div id="lobbyAudio"><label id="lobbyMusicLabel"><input id="musicEnabled" type="checkbox"> Lobby music</label><p id="musicStatus" class="help" role="status" hidden></p></div><div id="join"><h2>Join game</h2><input id="nickname" maxlength="20" placeholder="Nickname"><button id="joinBtn">Join game</button></div><h2>Players</h2><div id="seats"></div><div id="playControls" aria-label="Turn controls"><p id="status" role="status" aria-live="polite"></p><div id="dice">—</div><div id="moves"></div><button id="roll">Roll dice</button><div id="mobileChoices" hidden><select id="mobileMove" aria-label="Choose a legal move"></select><button id="mobileMoveBtn">Move piece</button></div></div><button id="start">Start with computers</button><button id="startHuman">Start humans only</button><button id="reset">⏹ Reset game</button><button id="sound">🔊 Sound on</button><p class="help">2–4 human players supported; optional computer opponents. The host runs on port 8080. Unoccupied colors are skipped in human-only games. Disconnected players are replaced by computers while other humans remain. The game resets when the last human leaves.</p></aside></main><audio id="lobbyTrack" src="/music2.mp3?v=2" loop preload="metadata"></audio><dialog id="victory" aria-labelledby="winnerName" aria-describedby="winnerMessage"><div id="fireworks" aria-hidden="true"></div><div class="victory-content"><div class="tada">TA-DA!</div><h2 id="winnerName"></h2><p id="winnerMessage">All four pieces are HOME. What a finish!</p><button id="dismissVictory" autofocus>Back to the board</button></div></dialog><script>
 const $=id=>document.getElementById(id),canvas=$('board'),ctx=canvas.getContext('2d');let ws,seat=null,state=null,lastEvent=null,rolling=false,sound=true,audio=null;
 const colors=['#cf3936','#39834b','#e5b33d','#3478bb'],names=['Red','Green','Yellow','Blue'],start=[55,38,4,21],safe=new Set([4,12,21,29,38,46,55,63]);
+const audioLevels={effects:.38,winner:.65,lobby:.25};
 // Unlock Web Audio inside a real input gesture, before WebSocket events arrive.
 async function unlockAudio(){
  if(!sound)return false;
@@ -49,7 +50,7 @@ async function unlockAudio(){
   return audio.state==='running';
  }catch(e){return false}
 }
-const lobbyMusic=$('lobbyTrack');lobbyMusic.volume=.35;
+const lobbyMusic=$('lobbyTrack');lobbyMusic.volume=audioLevels.lobby;
 let musicBlocked=false,musicWanted=false,musicPending=false;
 let musicSource=null,musicMeter=null,musicSamples=null,musicEnvelope=0;
 // Observe the existing music stream; never create a second playback or change volume.
@@ -111,7 +112,7 @@ async function beep(f,d=.1,delay=0){
  if(!sound||!await unlockAudio()||!sound)return;
  try{
   const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime+delay;
-  o.type='triangle';o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.16,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  o.type='triangle';o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(audioLevels.effects,t+.008);g.gain.setValueAtTime(audioLevels.effects,t+d*.55);g.gain.exponentialRampToValueAtTime(.0001,t+d);
   o.connect(g).connect(audio.destination);activeSounds.add(o);
   o.onended=()=>{activeSounds.delete(o);o.disconnect();g.disconnect()};o.start(t);o.stop(t+d+.02);
  }catch(e){}
@@ -362,9 +363,10 @@ async function victoryFanfare(){
  if(!sound||!await unlockAudio())return;
  const buffer=await loadWinnerAudio();
  if(!buffer||!sound||generation!==winnerAudioGeneration)return;
- const source=audio.createBufferSource();source.buffer=buffer;source.connect(audio.destination);
+ const source=audio.createBufferSource(),gain=audio.createGain();source.buffer=buffer;
+ gain.gain.setValueAtTime(audioLevels.winner,audio.currentTime);source.connect(gain);gain.connect(audio.destination);
  winnerSource=source;activeSounds.add(source);
- source.onended=()=>{activeSounds.delete(source);source.disconnect();if(winnerSource===source)winnerSource=null};source.start();
+ source.onended=()=>{activeSounds.delete(source);source.disconnect();gain.disconnect();if(winnerSource===source)winnerSource=null};source.start();
 }
 function syncVictory(){
  const winner=state.game.winner;

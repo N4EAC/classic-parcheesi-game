@@ -1,6 +1,6 @@
 // Run with Node.js: node test_frontend.cjs (no npm packages required).
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const handlers={},elements={},oscillators=[],contexts=[],buffers=[],musicSources=[];let gesture=false,tick,now=400;
+const handlers={},elements={},oscillators=[],contexts=[],buffers=[],musicSources=[],gains=[];let gesture=false,tick,now=400;
 function element(){return {open:false,attributes:{},style:{setProperty(){}},children:[],setAttribute(key,value){this.attributes[key]=value},replaceChildren(){this.children=[]},appendChild(child){this.children.push(child)},showModal(){this.open=true;this.shown=(this.shown||0)+1},close(){this.open=false}}}
 const ctx=new Proxy({createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})}, {get:(o,k)=>k in o?o[k]:()=>{}});
 elements.board={getContext:()=>ctx};
@@ -8,10 +8,10 @@ class AudioContext{
  constructor(){this.state='suspended';this.currentTime=0;this.sampleRate=48000;this.destination={};contexts.push(this)}
  async resume(){if(gesture)this.state='running'}
  createBuffer(){return {}}
- createBufferSource(){const source={connect(){},disconnect(){},start(){source.started=true},stop(){source.stopped=true}};buffers.push(source);return source}
+ createBufferSource(){const source={connect(target){source.destination=target},disconnect(){},start(){source.started=true},stop(){source.stopped=true}};buffers.push(source);return source}
  async decodeAudioData(){return {decoded:true}}
  createOscillator(){const o={frequency:{},connect(){return this},disconnect(){},start(){assert.equal(contexts[0].state,'running');o.started=true},stop(){o.stopped=true}};oscillators.push(o);return o}
- createGain(){return {gain:{setValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){}}}
+ createGain(){const events=[],node={gain:{setValueAtTime(value,time){events.push({kind:'set',value,time})},exponentialRampToValueAtTime(value,time){events.push({kind:'ramp',value,time})}},events,connect(){},disconnect(){}};gains.push(node);return node}
  createAnalyser(){return {fftSize:256,connect(){},getByteTimeDomainData(samples){samples.fill(144)}}}
  createMediaElementSource(element){const source={element,connect(){}};musicSources.push(source);return source}
 }
@@ -66,6 +66,10 @@ vm.runInContext('state=null',sandbox);motion.matches=false;
  gesture=true;await handlers.pointerdown();gesture=false;
  assert.equal(contexts[0].state,'running','First gesture unlocks default-on sound');
  await vm.runInContext('beep(440)',sandbox);assert.equal(oscillators.length,1);assert.ok(oscillators[0].started);
+ assert.equal(gains[0].events[1].value,.38,'Movement and dice have a stronger peak');
+ assert.equal(gains[0].events[2].value,.38,'Effects sustain briefly instead of immediately fading');
+ assert.equal(gains[0].events[2].time,.1*.55);
+ assert.equal(vm.runInContext('lobbyMusic.volume',sandbox),.25,'Music leaves room for the game effects');
  elements.sound.onclick();assert.ok(oscillators[0].stopped);await vm.runInContext('beep(440)',sandbox);assert.equal(oscillators.length,1,'Muted sounds are suppressed');
  gesture=true;elements.sound.onclick();gesture=false;await vm.runInContext('beep(440)',sandbox);assert.equal(oscillators.length,2);
  contexts[0].state='suspended';gesture=true;await handlers.keydown();gesture=false;assert.equal(contexts[0].state,'running','Keyboard resumes interrupted audio');
@@ -83,6 +87,7 @@ vm.runInContext('state=null',sandbox);motion.matches=false;
  vm.runInContext('state.game.winner=null;syncVictory()',sandbox);assert.equal(elements.victory.open,false);
  const before=buffers.length;await vm.runInContext('sound=true;victoryFanfare()',sandbox);
  assert.equal(buffers.length-before,1,'Winner uses provided WAV buffer');assert.ok(buffers.at(-1).buffer.decoded);assert.ok(buffers.at(-1).started);
+ assert.equal(buffers.at(-1).destination.events[0].value,.65,'Victory WAV passes through its quieter gain control');
  elements.sound.onclick();assert.ok(buffers.at(-1).stopped,'Mute stops winner WAV');
  vm.runInContext(`state={game:{started:true,winner:null,pieces:[[0,-1,-1,-1],[-1,-1,-1,-1],[-1,-1,-1,-1],[-1,-1,-1,-1]]}};
  const next={game:{started:true,winner:null,pieces:[[2,-1,-1,-1],[-1,-1,-1,-1],[-1,-1,-1,-1],[-1,-1,-1,-1]]},event:{kind:'move'}};queueMoves(state,next);state=next`,sandbox);
