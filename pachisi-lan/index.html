@@ -45,11 +45,24 @@ async function unlockAudio(){
    const silent=audio.createBufferSource();silent.buffer=audio.createBuffer(1,1,audio.sampleRate);silent.connect(audio.destination);silent.start();
   }
   if(audio.state!=='running')await audio.resume();
+  if(audio.state==='running')connectMusicMeter();
   return audio.state==='running';
  }catch(e){return false}
 }
 const lobbyMusic=$('lobbyTrack');lobbyMusic.volume=.35;
 let musicBlocked=false,musicWanted=false,musicPending=false;
+let musicSource=null,musicMeter=null,musicSamples=null,musicEnvelope=0;
+// Observe the existing music stream; never create a second playback or change volume.
+function connectMusicMeter(){
+ if(musicSource||!audio||audio.state!=='running'||!audio.createMediaElementSource||!audio.createAnalyser)return;
+ try{
+  const meter=audio.createAnalyser();meter.fftSize=256;
+  // Connect the output first so attaching the media element cannot silence it.
+  meter.connect(audio.destination);
+  musicSource=audio.createMediaElementSource(lobbyMusic);
+  musicSource.connect(meter);musicMeter=meter;musicSamples=new Uint8Array(meter.fftSize);
+ }catch(error){if(musicSource){try{musicSource.connect(audio.destination)}catch(e){}}}
+}
 function updateMusicUI(message){
  $('lobbyAudio').hidden=Boolean(state?.game.started);
  $('musicEnabled').disabled=!sound;$('musicEnabled').checked=musicWanted;
@@ -78,7 +91,7 @@ function audioGesture(){void unlockAudio()}
 $('musicEnabled').onchange=()=>{
  musicWanted=$('musicEnabled').checked;musicBlocked=false;syncLobbyMusic();
 };
-lobbyMusic.addEventListener('playing',()=>updateMusicUI());
+lobbyMusic.addEventListener('playing',()=>{connectMusicMeter();updateMusicUI()});
 lobbyMusic.addEventListener('error',()=>updateMusicUI('Music could not load. Refresh the page after installing the latest update.'));
 document.addEventListener('pointerdown',audioGesture,{capture:true});
 document.addEventListener('click',audioGesture,{capture:true});
@@ -213,6 +226,33 @@ const woodSurface=createWoodSurface();
 function woodGrain(x,y,width,height,opacity){ctx.save();ctx.globalAlpha=opacity;ctx.drawImage(woodSurface,x,y,width,height,x,y,width,height);ctx.restore()}
 function cell(x,y,fill){ctx.fillStyle=fill;ctx.fillRect(x-unit/2+1,y-unit/2+1,unit-2,unit-2);woodGrain(x-unit/2+1,y-unit/2+1,unit-2,unit-2,.2);ctx.strokeStyle='#897454';ctx.lineWidth=1;ctx.strokeRect(x-unit/2+1,y-unit/2+1,unit-2,unit-2)}
 const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
+const glowCells=[...track,...lanes.flat()],pathGlows=[];
+let nextPathGlow=0;
+function lobbyGlowActive(){
+ return Boolean(state&&!state.game.started&&sound&&musicWanted&&!document.hidden&&ws?.readyState===1&&!lobbyMusic.paused&&!lobbyMusic.ended&&lobbyMusic.readyState>=2&&(!musicSource||audio?.state==='running')&&!reducedMotion.matches);
+}
+function drawPathGlows(now){
+ if(!lobbyGlowActive()){pathGlows.length=0;nextPathGlow=0;musicEnvelope=0;return}
+ let energy=.45+.15*Math.sin(lobbyMusic.currentTime*.7);
+ if(musicMeter&&audio?.state==='running'){
+  musicMeter.getByteTimeDomainData(musicSamples);
+  let sum=0;for(const sample of musicSamples){const v=(sample-128)/128;sum+=v*v}
+  energy=Math.min(1,Math.sqrt(sum/musicSamples.length)*5);
+ }
+ musicEnvelope+=(energy-musicEnvelope)*.08;
+ if(now>=nextPathGlow){
+  const available=glowCells.map((_,i)=>i).filter(i=>!pathGlows.some(glow=>glow.cell===i));
+  if(available.length)pathGlows.push({cell:available[Math.floor(Math.random()*available.length)],start:now,duration:2600+Math.random()*1800});
+  nextPathGlow=now+350+Math.random()*300;
+ }
+ for(let i=pathGlows.length-1;i>=0;i--){
+  const glow=pathGlows[i],phase=(now-glow.start)/glow.duration;
+  if(phase>=1){pathGlows.splice(i,1);continue}
+  const [x,y]=glowCells[glow.cell],opacity=Math.sin(Math.PI*phase)**2*(.09+.14*musicEnvelope);
+  ctx.fillStyle=`rgba(255,226,145,${opacity})`;
+  ctx.fillRect(x-unit/2+2,y-unit/2+2,unit-4,unit-4);
+ }
+}
 function pawnWiggle(p,i,now){
  if(reducedMotion.matches)return 0;
  const phase=((now+(p*4+i)*683)%11000)/850;
@@ -224,6 +264,7 @@ track.forEach(([x,y],i)=>{cell(x,y,safe.has(i)?'#c9ab73':'#fff4d9');if(safe.has(
 start.forEach((index,p)=>{const [x,y]=track[index];ctx.beginPath();ctx.arc(x,y,13,0,Math.PI*2);ctx.strokeStyle=colors[p];ctx.lineWidth=3;ctx.stroke()});
 lanes.forEach((lane,p)=>lane.forEach(([x,y])=>cell(x,y,colors[p])));
 homeArrows.forEach((points,p)=>{ctx.beginPath();ctx.moveTo(...points[0]);ctx.lineTo(...points[1]);ctx.lineTo(...points[2]);ctx.closePath();ctx.fillStyle=colors[p];ctx.fill();ctx.save();ctx.clip();woodGrain(8*unit,8*unit,3*unit,3*unit,.2);ctx.restore()});
+drawPathGlows(now);
 drawDice(now);
 if(state){
  // Group every pawn by its actual board coordinate. Offset stacked pawns so
@@ -333,7 +374,7 @@ setInterval(()=>{
  if(document.hidden){jumps.clear();return}if(!state)return;
  const now=performance.now();
  const wiggling=!reducedMotion.matches&&state.game.pieces.some((pieces,p)=>pieces.some((v,i)=>Math.abs(pawnWiggle(p,i,now))>.0001));
- if(wiggling||wasWiggling||jumps.size||diceTimeline.length){draw();$('roll').disabled=!canRoll();if(state.game.winner!==null)syncVictory()}
+ if(wiggling||wasWiggling||jumps.size||diceTimeline.length||lobbyGlowActive()||pathGlows.length){draw();$('roll').disabled=!canRoll();if(state.game.winner!==null)syncVictory()}
  wasWiggling=wiggling;
 },20);
 reducedMotion.addEventListener('change',()=>{wasWiggling=false;jumps.clear();if(reducedMotion.matches&&diceTimeline.length){const last=diceTimeline.at(-1);diceRest={...last.to,values:last.values};diceTimeline.length=0}draw();if(state){$('roll').disabled=!canRoll();syncVictory()}});

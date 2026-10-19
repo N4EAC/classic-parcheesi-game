@@ -11,6 +11,7 @@ A classic Parcheesi board game for **2–4 players on the same network**, with o
 - Human-only games or computer opponents for open seats.
 - Fixed mobile turn controls: roll and move without scrolling below the board.
 - Optional lobby music, game sounds, and a winner celebration with fireworks.
+- While lobby music plays, random path squares gently shimmer with its audio level; reduced-motion settings keep the paths still.
 - Victory Hall ranked by wins. Ubuntu installations keep scores in RAM across game resets and service restarts; rebooting the machine clears them.
 - Rules in English, Brazilian Portuguese, Spanish, French, Italian, Russian, Japanese, Simplified Chinese, and Hindi.
 - Automatic return to the lobby when the last human disconnects.
@@ -24,15 +25,15 @@ Supports **Ubuntu 24.04 LTS** on Intel/AMD (`amd64`) and ARM64 (`arm64`). The ar
 ```bash
 sudo apt update
 sudo apt install -y curl
-curl -fLO https://github.com/N4EAC/classic-parcheesi-game/releases/latest/download/classic-parcheesi-game_1.0.1_all.deb
-curl -fLO https://github.com/N4EAC/classic-parcheesi-game/releases/latest/download/classic-parcheesi-game_1.0.1_all.deb.sha256
-sha256sum -c classic-parcheesi-game_1.0.1_all.deb.sha256
-sudo apt install ./classic-parcheesi-game_1.0.1_all.deb
+curl -fLO https://github.com/N4EAC/classic-parcheesi-game/releases/latest/download/classic-parcheesi-game_1.0.2_all.deb
+curl -fLO https://github.com/N4EAC/classic-parcheesi-game/releases/latest/download/classic-parcheesi-game_1.0.2_all.deb.sha256
+sha256sum -c classic-parcheesi-game_1.0.2_all.deb.sha256
+sudo apt install ./classic-parcheesi-game_1.0.2_all.deb
 ```
 
 Open **http://SERVER_IP:8080/** from devices on the same network (`hostname -I` shows the server address). If UFW is enabled, allow your LAN subnet, for example `sudo ufw allow from 10.0.0.0/24 to any port 8080 proto tcp`; replace that subnet with your own. The `.deb` does not change firewall rules.
 
-To transfer the downloaded package over SSH instead, run `scp classic-parcheesi-game_1.0.1_all.deb USER@SERVER_IP:~/`, connect with `ssh USER@SERVER_IP`, and run `sudo apt install ./classic-parcheesi-game_1.0.1_all.deb` there.
+To transfer the downloaded package over SSH instead, run `scp classic-parcheesi-game_1.0.2_all.deb USER@SERVER_IP:~/`, connect with `ssh USER@SERVER_IP`, and run `sudo apt install ./classic-parcheesi-game_1.0.2_all.deb` there.
 
 The package installs files in `/usr/share/classic-parcheesi-game`. Installing it over the original shell installation migrates the standard service, saves its unit as `/etc/systemd/system/pachisi-lan.service.shell-installer-backup`, and leaves `/opt/pachisi-lan` available for recovery. Custom service overrides must be moved aside manually. Installation and upgrades end the current match; Victory Hall scores survive service restarts until reboot. Use APT for subsequent upgrades; do not rerun the old shell installer over the package.
 
