@@ -7,7 +7,7 @@ from aiohttp import web, WSMsgType
 
 clients = {}; seats = [None]*4; lock = asyncio.Lock()
 # A pawn traverses 64 of the 68 shared spaces, then seven private spaces and HOME.
-START = [55,38,4,21]  # red, green, yellow, blue; 17 squares apart
+START = [21,38,4,55]  # red, green, yellow, blue on the clockwise track
 SAFE = {4,12,21,29,38,46,55,63}
 HOME = 71
 serial = 0; event = None

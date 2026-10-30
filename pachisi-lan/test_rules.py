@@ -11,16 +11,28 @@ class Rules(unittest.TestCase):
         s.game['pieces'][0]=[10,-1,-1,-1]
         self.assertTrue(all(o['enter'] for o in s.choices(0)))
     def test_entry_capture_and_blockade(self):
-        s.game['pieces'][1][0]=17
+        s.game['pieces'][1][0]=(s.START[0]-s.START[1])%68
         self.assertTrue(s.legal_piece(0,0,5,True))
         s.move(0,s.choices(0)[0]);self.assertEqual(s.game['pieces'][1][0],-1)
         self.assertEqual(s.game['remaining'],[20])
         self.assertFalse(s.game['bonus_active'] is False)
     def test_entry_blocked(self):
-        s.game['pieces'][1]=[17,17,-1,-1]
+        entry=(s.START[0]-s.START[1])%68
+        s.game['pieces'][1]=[entry,entry,-1,-1]
         self.assertFalse(s.legal_piece(0,0,5,True))
+    def test_entry_capture_for_every_clockwise_color(self):
+        for player in range(4):
+            with self.subTest(player=player):
+                self.setUp();s.game['turn']=player
+                opponent=(player+1)%4
+                s.game['pieces'][opponent][0]=(s.START[player]-s.START[opponent])%68
+                self.assertIn(s.START[player],s.SAFE)
+                option=next(o for o in s.choices(player) if o['piece']==0 and o['enter'])
+                s.move(player,option)
+                self.assertEqual(s.game['pieces'][player][0],0)
+                self.assertEqual(s.game['pieces'][opponent][0],-1)
     def test_safe_landing(self):
-        s.game['pieces'][0][0]=7;s.game['pieces'][1][0]=25
+        s.game['pieces'][0][0]=7;s.game['pieces'][1][0]=(s.sq(0,8)-s.START[1])%68
         self.assertFalse(s.legal_piece(0,0,1))
     def test_home_lane_blockade(self):
         s.game['pieces'][0]=[63,65,65,-1]

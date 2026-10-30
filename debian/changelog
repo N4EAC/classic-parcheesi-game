@@ -1,3 +1,11 @@
+classic-parcheesi-game (1.0.9) unstable; urgency=medium
+
+  * Change movement to clockwise for all four colors.
+  * Align entries, safety spaces, HOME lanes and triangles with clockwise travel.
+  * Update all nine rules languages and verify full route continuity.
+
+ -- N4EAC <21286567+N4EAC@users.noreply.github.com>  Thu, 29 Oct 2026 23:14:05 -0400
+
 classic-parcheesi-game (1.0.8) unstable; urgency=medium
 
   * Render floating lobby dice as perspective 3D cubes with shaded faces.

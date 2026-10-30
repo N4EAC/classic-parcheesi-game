@@ -25,6 +25,29 @@ const motion={matches:false,addEventListener(){}};
 const sandbox=vm.createContext({console,document:{body:element(),hidden:false,getElementById:id=>elements[id]||(elements[id]=id==='lobbyTrack'?new LobbyAudio('/music2.mp3?v=2'):element()),createElement:tag=>tag==='canvas'?{getContext:()=>ctx}:element(),addEventListener:(type,fn)=>handlers[type]=fn},fetch:async()=>({ok:true,arrayBuffer:async()=>new ArrayBuffer(4)}),window:{Audio:LobbyAudio,AudioContext,matchMedia:()=>motion,addEventListener:(type,fn)=>windowHandlers[type]=fn},performance:{now:()=>now},location:{protocol:'http:',host:'localhost',origin:'http://localhost'},WebSocket:class{},setTimeout(){},setInterval(fn,ms){if(ms===20)tick=fn},clearInterval(){}});
 const source=fs.readFileSync(__dirname+'/index.html','utf8').split('<script>')[1].split('</script>')[0];
 vm.runInContext(source,sandbox);
+const serverSource=fs.readFileSync(__dirname+'/server.py','utf8');
+assert.deepEqual(Array.from(vm.runInContext('start',sandbox)),JSON.parse(serverSource.match(/START = (\[[^\]]+\])/)[1]),'Server and board use identical entry spaces');
+assert.deepEqual(Array.from(vm.runInContext('safe',sandbox)).sort((a,b)=>a-b),serverSource.match(/SAFE = \{([^}]+)\}/)[1].split(',').map(Number).sort((a,b)=>a-b),'Server and board agree on safety spaces');
+vm.runInContext(`{
+ const entry=[[8,14],[4,8],[14,10],[10,4]].map(([x,y])=>P(x,y));
+ const laneEntry=[[9,17],[1,9],[17,9],[9,1]].map(([x,y])=>P(x,y));
+ if(new Set(track.map(point=>point.join(','))).size!==68)throw Error('Shared track repeats a square');
+ const signedArea=track.reduce((sum,a,i)=>{const b=track[(i+1)%68];return sum+a[0]*b[1]-b[0]*a[1]},0);
+ // With screen Y increasing downward, positive winding is clockwise.
+ if(signedArea<=0)throw Error('Pieces progress counterclockwise');
+ for(let p=0;p<4;p++){
+  if(JSON.stringify(xy(p,0,0))!==JSON.stringify(entry[p]))throw Error('Clockwise entry is not beside its own base');
+  if(JSON.stringify(xy(p,0,64))!==JSON.stringify(laneEntry[p]))throw Error('Piece enters another color home lane');
+  if(!safe.has(start[p]))throw Error('Entry space is not safe');
+  for(let step=0;step<70;step++){
+   const a=xy(p,0,step),b=xy(p,0,step+1),distance=Math.hypot(b[0]-a[0],b[1]-a[1]);
+   if(Math.abs(distance-unit)>1e-7&&Math.abs(distance-unit*Math.SQRT2)>1e-7)throw Error('Clockwise route has a missing or disconnected space');
+  }
+  const before=xy(p,0,63),lane=xy(p,0,64);
+  if(Math.abs(Math.hypot(lane[0]-before[0],lane[1]-before[1])-unit)>1e-7)throw Error('HOME entry jumps across the board');
+ }
+}`,sandbox);
+console.log('PASS: clockwise winding, all four base entries, continuous full routes and HOME lanes, matching server safety and entry maps.');
 vm.runInContext(`homeArrows.forEach((points,p)=>{
  const [a,b,tip]=points,last=lanes[p].at(-1),mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2;
  if(tip[0]!==375||tip[1]!==375)throw Error('Arrow tip misses HOME');

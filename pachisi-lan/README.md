@@ -107,3 +107,8 @@ Open **🏆 Victory Hall** below the board in its same-tab panel; the standalone
 The updated Ubuntu installer configures `/run/pachisi-lan/victory-hall.json` as a RAM-backed checkpoint using systemd's preserved runtime directory. Scores survive service stops, restarts and game updates, and clear when the machine reboots. The runtime service owns this directory; application code remains read-only. A direct development launch without `PARCHEESI_HALL_FILE` keeps scores only in Python process memory, so restarting that process clears them.
 
 Validation includes winner counting exactly once, sorting and safe nickname rendering, keeping scores across game resets and abandonment, checkpoint restore across service restarts, and dice travel/rolling/turn changes/doubles/reduced motion.
+
+
+## Clockwise board layout
+
+Pieces progress clockwise in this version. Bases stay in their original corners. Entry squares are adjacent to their own base, and each 64-space shared route connects to its matching seven-space HOME lane: red from below, green from the left, yellow from the right, and blue from above. The server and renderer use the same entry and safety indices. All nine translated rules describe this clockwise variant.
